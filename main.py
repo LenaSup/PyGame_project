@@ -1,7 +1,7 @@
 import pygame
 
 
-class Cell:
+class Cell: # общий класс клетки
     def __init__(self, x=0, y=0, screen=None, size=80):
         self.name = self.__class__.__name__
         self.can_build = False
@@ -24,7 +24,7 @@ class Cell:
         self.size = size
 
 
-class Road_cell(Cell):
+class Road_cell(Cell): # клетка догори для мобов
     def __init__(self, x, y, screen, size=80):
         super().__init__(x, y, screen, size)
 
@@ -32,18 +32,18 @@ class Road_cell(Cell):
         pygame.draw.rect(self.screen, 'blue', (self.x, self.y, self.size, self.size), 1)
 
 
-class Pass_cell(Cell):
+class Pass_cell(Cell): # пустая клетка, декоративная
     def __init__(self, x, y, screen, size=80):
         super().__init__(x, y, screen, size)
 
 
-class Building_cell(Cell):
+class Building_cell(Cell): # клетка для стороительства башен
     def __init__(self, x, y, screen, size=80):
         super().__init__(x, y, screen, size)
         self.can_build = True
 
 
-class Entity:
+class Entity: # общий класс существ
     def __init__(self, x, y, screen, is_enemy=False):
         self.name = self.__class__.__name__
         self.is_enemy = is_enemy
@@ -52,41 +52,36 @@ class Entity:
 
     def __str__(self):
         if self.is_enemy:
-            return ': '.join([self.name, 'enemy'])
-        return ': '.join([self.name, 'not enemy'])
+            return self.name
+        return self.name
 
-    def focus_check(self, mouse_pos):
+    def focus_check(self, mouse_pos): #
         pass
 
 
-class Enemy(Entity):
-    def __init__(self, x, y, screen, size, health, image, damage=1, damage_tower=0, radius=0, can_destroy=False, speed=-1):
+class Enemy(Entity): # класс враждебного моба
+    def __init__(self, x, y, screen, size, health, image, damage=1, speed=-1):
         super().__init__(x, y, screen, True)
-        self.can_destroy = can_destroy
         self.size = size
         self.health = health
         self.damage = damage
-        self.damage_tower = damage_tower
-        self.radius = radius
         self.speed = speed
         self.image = image
 
-    def move(self):
-        self.pos = self.pos[0], self.pos[1] + self.speed
+    def move(self): # передвижение моба
+        self.pos = self.pos[0] + self.speed, self.pos[1]
 
-    def check(self, cell1, cell2):
-        if self.speed > 0:
-            if cell1.name == 'Road_cell':
-                self.move()
-        if self.speed < 0:
-            if cell2.name == 'Road_cell':
-                self.move()
+    def check(self, cell1, cell2): # проверка(моб не может выйти за пределы дороги)
+        if self.speed > 0 and cell1.name == 'Road_cell':
+            self.move()
+        if self.speed < 0 and cell2.name == 'Road_cell':
+            self.move()
 
     def draw(self):
         pygame.draw.rect(self.screen, 'red', (self.pos[0], self.pos[1], self.size, self.size), 0)
 
 
-class Tower(Entity):
+class Tower(Entity): # класс башни
     def __init__(self, x, y, screen, size, health, images, damage=1, radius=0, sps=1, level=1):
         super().__init__(x, y, screen, False)
         self.health = health
@@ -103,39 +98,37 @@ class Tower(Entity):
 
 
 class Board:
-    def __init__(self, screen, height=10, width=10, cell_size=80, left=0, top=0):
+    def __init__(self, screen, height=10, width=10, cell_size=80):
         self.screen = screen
         self.hieght = height
         self.width = width
         self.cell_size = cell_size
-        self.left = left
-        self.top = top
         self.board = [[Pass_cell(self.cell_size * i, self.cell_size * h, self.screen, self.cell_size)
                        for h in range(width)] for i in range(height)]
         self.spis = ['white', 'red', 'blue']
 
-    def set_cell_size(self, cell_size):
+    def set_cell_size(self, cell_size): # установить новый размер клетки
         self.cell_size = cell_size
         for h in range(self.hieght):
             for i in range(self.width):
                 self.board[h][i].set_size(self.cell_size)
 
-    def render(self):
+    def render(self): #
         for i in range(self.hieght):
             for g in range(self.width):
                 self.board[i][g].draw()
 
-    def set_cell(self, x, y, type):
-        self.board[y][x] = type
+    def set_cell(self, x, y, cell): # заменить одну клетку на другую
+        self.board[y][x] = cell
 
-    def get_cell(self, pos):
-        cell_x = (pos[0] - self.left) // self.cell_size
-        cell_y = (pos[1] - self.top) // self.cell_size
+    def get_cell(self, pos): # проверка на какую клетку нажали
+        cell_x = pos[0] // self.cell_size
+        cell_y = pos[1] // self.cell_size
         if cell_x < 0 or cell_x >= self.width or cell_y < 0 or cell_y >= self.hieght:
             return Pass_cell(0, 0, None)
         return self.board[cell_y][cell_x]
 
-    def get_click(self, mouse_pos):
+    def get_click(self, mouse_pos): # проверка на какую клетку нажали
         cell = self.get_cell(mouse_pos)
         if cell:
             return cell
