@@ -172,11 +172,18 @@ class Board:
         if cell_y < 0 or cell_y >= self.width or cell_x < 0 or cell_x >= self.hieght:
             print('error')
             return Pass_cell(0, 0, None, 80)
-        return self.board[cell_x][cell_y]
+        return self.board[cell_x][cell_y], (cell_x, cell_y)
 
     def get_click(self, mouse_pos): # проверка на какую клетку нажали
-        cell = self.get_cell(mouse_pos)
-        if cell:
+        cell, pos = self.get_cell(mouse_pos)
+        if cell and cell.name == 'Building_cell':
+            if cell.tower == None:
+                cell.set_tower(Tower(pos[0] * self.cell_size + 10, pos[1] * self.cell_size + 10, self.screen,
+                                     60, 100, None))
+            else:
+                cell.set_tower(None)
+            return cell
+        elif cell != None:
             return cell
 
 
@@ -240,7 +247,7 @@ def main():
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     print(my_board.get_click(event.pos))
                 if event.type == my_event:
                     cell1 = my_board.get_click((enemy.pos[0] + enemy.size[0], enemy.pos[1] + enemy.size[1]))
