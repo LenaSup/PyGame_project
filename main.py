@@ -1,4 +1,5 @@
 import pygame
+import sys
 import os
 
 
@@ -52,33 +53,26 @@ class Building_cell(Cell): # клетка для стороительства б
             self.tower.draw()
 
 
-class Entity: # общий класс существ
-    def __init__(self, x, y, screen):
+class Enemy(pygame.sprite.Sprite): # класс враждебного моба
+    def __init__(self, x, y, screen, width, height, health, image, damage=1, reload=1, speed=1):
+        super().__init__(entities, enemies)
         self.name = self.__class__.__name__
         self.pos = x, y
         self.screen = screen
-
-    def __str__(self):
-        return self.name
-
-    def focus_check(self, mouse_pos):
-        pass
-
-
-class Enemy(Entity): # класс враждебного моба
-    def __init__(self, x, y, screen, width, height, health, image, damage=1, bps=1, speed=1):
-        super().__init__(x, y, screen)
         self.size = self.width, self.height = width, height
         self.health = health
         self.damage = damage
         self.speed = speed
         self.image = image
-        self.bps = bps
+        self.image.fill('red')
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = self.pos[0], self.pos[1]
         self.path = None
         self.current_step = None
         self.step = None
         self.steps = None
         self.is_move = True
+        self.set_path(enemy_path)
 
     def load_step(self, index): # загрузка следующего направления движения
         self.step = self.path[self.current_step]
@@ -99,6 +93,7 @@ class Enemy(Entity): # класс враждебного моба
                 else:
                     self.pos = self.pos[0], self.pos[1] + self.speed
                     self.steps += 1
+                    self.rect.x, self.rect.y = self.pos[0], self.pos[1]
             else:
                 if abs(self.step[0]) == self.steps and self.current_step == len(self.path) - 1:
                     self.is_move = False
@@ -109,6 +104,7 @@ class Enemy(Entity): # класс враждебного моба
                 else:
                     self.pos = self.pos[0] + self.speed, self.pos[1]
                     self.steps += 1
+                    self.rect.x, self.rect.y = self.pos[0], self.pos[1]
 
     def check(self, cell1, cell2): # проверка(моб не может выйти за пределы дороги)
         if self.speed > 0 and cell1.name == 'Road_cell':
@@ -123,23 +119,52 @@ class Enemy(Entity): # класс враждебного моба
         self.load_step(0)
         print('Шагов в пути врага:', len(self.path))
 
-    def draw(self):
-        pygame.draw.rect(self.screen, 'red', (self.pos[0], self.pos[1], self.width, self.height), 0)
+    def get_damage(self, damage):
+        if self.health - damage <= 0:
+            self.health = 0
+            self.is_move = False
+            self.kill()
+        else:
+            self.health -= damage
+            self.image.fill('blue')
 
 
-class Tower(Entity): # класс башни
-    def __init__(self, x, y, screen, size, health, images, damage=1, radius=0, sps=1, level=1):
-        super().__init__(x, y, screen)
+class Tower(pygame.sprite.Sprite): # класс башни
+    def __init__(self, x, y, screen, size, health, damage=50, radius=200, reload=1000, level=1):
+        super().__init__(towers)
+        self.name = self.__class__.__name__
+        self.pos = x, y
+        self.screen = screen
         self.health = health
         self.size = size
         self.damage = damage
         self.radius = radius
-        self.sps = sps
+        self.reload = reload
         self.level = level
-        self.images = images
+        self.image = pygame.Surface((radius * 2, radius * 2))
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = (self.pos[0] + self.size // 2) - self.radius,\
+                                   (self.pos[1] + self.size // 2) - self.radius
+        self.radius = radius
+        self.focus = None
 
     def draw(self):
-        pygame.draw.rect(self.screen, 'yellow', (self.pos[0], self.pos[1], self.size, self.size))
+        pygame.draw.rect(self.screen, 'yellow', (self.pos[0], self.pos[1], self.size, self.size), 0)
+        pygame.draw.circle(self.screen, 'white', (self.pos[0] + self.size // 2, self.pos[1] + self.size // 2),
+                           self.radius, 1)
+
+    def fire(self):
+        if self.focus != None and self.focus.health != 0:
+            self.focus.get_damage(self.damage)
+        else:
+            self.focus_check()
+
+    def focus_check(self):
+        for enemy in enemies:
+            if pygame.sprite.collide_circle(enemy, self):
+                self.focus = enemy
+                self.fire()
+                break
 
 
 class Board:
@@ -151,6 +176,7 @@ class Board:
         self.board = [[Pass_cell(self.cell_size * i, self.cell_size * h, self.screen, self.cell_size)
                        for h in range(width)] for i in range(height)]
         self.spis = ['white', 'red', 'blue']
+        self.n = 3
 
     def set_cell_size(self, cell_size): # установить новый размер клетки
         self.cell_size = cell_size
@@ -179,8 +205,13 @@ class Board:
         if cell and cell.name == 'Building_cell':
             if cell.tower == None:
                 cell.set_tower(Tower(pos[0] * self.cell_size + 10, pos[1] * self.cell_size + 10, self.screen,
-                                     60, 100, None))
+                                     60, 100))
+                towers_reload[cell.tower] = pygame.USEREVENT + self.n
+                pygame.time.set_timer(towers_reload[cell.tower], cell.tower.reload)
+                self.n += 1
             else:
+                pygame.time.set_timer(towers_reload[cell.tower], 0)
+                del towers_reload[cell.tower]
                 cell.set_tower(None)
             return cell
         elif cell != None:
@@ -204,8 +235,11 @@ def generate_level(level_map, cell_size, screen):
                 lst.append(Building_cell(x * cell_size, y * cell_size, screen, cell_size))
             elif level_map[y][x] == '#':
                 lst.append(Road_cell(x * cell_size, y * cell_size, screen, cell_size))
+            elif level_map[y][x] == '@':
+                lst.append(Road_cell(x * cell_size, y * cell_size, screen, cell_size))
+                spawn_pos = (x, y)
         list_entities.append(lst)
-    return list_entities
+    return list_entities, spawn_pos
 
 
 def load_path(name):
@@ -220,45 +254,68 @@ def load_path(name):
             print('Неверный формат файла:', name)
 
 
+def find_key(dictionary, needle):
+    for key in dictionary.keys():
+        if dictionary[key] == needle:
+            return key
+
+
+def terminate():
+    pygame.quit()
+    sys.exit()
+
+
+entities = pygame.sprite.Group()
+enemies = pygame.sprite.Group()
+towers = pygame.sprite.Group()
+towers_reload = {}
+enemy_path = load_path('data/enemy_path.txt')
+
+
 def main():
     pygame.init()
     size = width, height = 1280, 720
     screen = pygame.display.set_mode(size)
     pygame.display.set_caption('First board')
+
     my_board = Board(screen, 16, 9)
     my_board.set_cell_size(80)
-    level = generate_level(load_level('data/map.map', 'data/settings.txt'), 80, screen)
+
+    lvl = load_level('data/map.map', 'data/settings.txt')
+    level, start_pos = generate_level(lvl, 80, screen)
     for x in range(len(level)):
         for y in range(len(level[x])):
             my_board.set_cell(x, y, level[x][y])
-    test_tower = Building_cell(0, 0, screen, 80, Tower(10, 10, screen, 60, 100, None))
-    my_board.set_cell(0, 0, test_tower)
-    my_board.board[4][8].set_tower(Tower(4 * 80 + 10, 8 * 80 + 10, screen, 60, 100, None))
-    entities = []
-    my_event = pygame.USEREVENT + 1
+
+    spawn_enemy = pygame.USEREVENT + 1
+    my_event = pygame.USEREVENT + 2
     pygame.time.set_timer(my_event, 10)
-    enemy = Enemy(20, 340, screen, 40, 40, 100, None)
-    enemy.set_path(load_path('data/enemy_path.txt'))
-    entities.append(enemy)
+    pygame.time.set_timer(spawn_enemy, 2000)
+
+    vrag = Enemy(start_pos[0] * 80 + 20, start_pos[1] * 80 + 20, screen, 40, 40, 200, pygame.Surface((40, 40)))
 
     running = True
     while running:
             screen.fill((0, 0, 0))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    running = False
+                    terminate()
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     print(my_board.get_click(event.pos))
                 if event.type == my_event:
-                    cell1 = my_board.get_click((enemy.pos[0] + enemy.size[0], enemy.pos[1] + enemy.size[1]))
-                    cell2 = my_board.get_click((enemy.pos[0] - 1, enemy.pos[1] - 1))
-                    enemy.check(cell1, cell2)
+                    for enemy in enemies:
+                        cell1 = my_board.get_click((enemy.pos[0] + enemy.size[0], enemy.pos[1] + enemy.size[1]))
+                        cell2 = my_board.get_click((enemy.pos[0] - 1, enemy.pos[1] - 1))
+                        enemy.check(cell1, cell2)
+                if event.type == spawn_enemy:
+                    Enemy(start_pos[0] * 80 + 20, start_pos[1] * 80 + 20, screen, 40, 40, 200, pygame.Surface((40, 40)))
+                if event.type in towers_reload.values():
+                    find_key(towers_reload, event.type).fire()
             my_board.render()
-            enemy.draw()
-            for entity in entities:
-                entity.draw()
+            entities.update()
+            entities.draw(screen)
             pygame.display.flip()
-    pygame.quit()
+    terminate()
 
 
 if __name__ == '__main__':
