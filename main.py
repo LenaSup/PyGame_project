@@ -54,7 +54,7 @@ class Building_cell(Cell): # клетка для стороительства б
 
 
 class Enemy(pygame.sprite.Sprite): # класс враждебного моба
-    def __init__(self, x, y, screen, width, height, health, image, damage=1, reload=1, speed=1):
+    def __init__(self, x, y, screen, width, height, health, image, damage=1, price=100, reload=1000, speed=1):
         super().__init__(entities, enemies)
         self.name = self.__class__.__name__
         self.pos = x, y
@@ -64,6 +64,7 @@ class Enemy(pygame.sprite.Sprite): # класс враждебного моба
         self.damage = damage
         self.speed = speed
         self.image = image
+        self.price = price
         self.image.fill('red')
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.pos[0], self.pos[1]
@@ -117,12 +118,13 @@ class Enemy(pygame.sprite.Sprite): # класс враждебного моба
         self.current_step = 0
         self.steps = 0
         self.load_step(0)
-        print('Шагов в пути врага:', len(self.path))
 
     def get_damage(self, damage):
         if self.health - damage <= 0:
             self.health = 0
             self.is_move = False
+            global gold
+            gold += self.price
             self.kill()
         else:
             self.health -= damage
@@ -130,13 +132,14 @@ class Enemy(pygame.sprite.Sprite): # класс враждебного моба
 
 
 class Tower(pygame.sprite.Sprite): # класс башни
-    def __init__(self, x, y, screen, size, health, damage=50, radius=200, reload=1000, level=1):
+    def __init__(self, x, y, screen, size, health, damage=50, radius=200, reload=1000, price=500, level=1):
         super().__init__(towers)
         self.name = self.__class__.__name__
         self.pos = x, y
         self.screen = screen
         self.health = health
         self.size = size
+        self.price = price
         self.damage = damage
         self.radius = radius
         self.reload = reload
@@ -176,7 +179,7 @@ class Board:
         self.board = [[Pass_cell(self.cell_size * i, self.cell_size * h, self.screen, self.cell_size)
                        for h in range(width)] for i in range(height)]
         self.spis = ['white', 'red', 'blue']
-        self.n = 3
+        self.n = 11
 
     def set_cell_size(self, cell_size): # установить новый размер клетки
         self.cell_size = cell_size
@@ -200,18 +203,24 @@ class Board:
             return Pass_cell(0, 0, None, 80)
         return self.board[cell_x][cell_y], (cell_x, cell_y)
 
-    def get_click(self, mouse_pos): # проверка на какую клетку нажали
+    def get_click(self, mouse_pos, tower_price=500): # проверка на какую клетку нажали
         cell, pos = self.get_cell(mouse_pos)
         if cell and cell.name == 'Building_cell':
+            global gold
             if cell.tower == None:
-                cell.set_tower(Tower(pos[0] * self.cell_size + 10, pos[1] * self.cell_size + 10, self.screen,
-                                     60, 100))
-                towers_reload[cell.tower] = pygame.USEREVENT + self.n
-                pygame.time.set_timer(towers_reload[cell.tower], cell.tower.reload)
-                self.n += 1
+                if gold >= tower_price:
+                    cell.set_tower(Tower(pos[0] * self.cell_size + 10, pos[1] * self.cell_size + 10, self.screen,
+                                         60, 100, 100, 200, 1000, tower_price))
+                    gold -= tower_price
+                    towers_reload[cell.tower] = pygame.USEREVENT + self.n
+                    pygame.time.set_timer(towers_reload[cell.tower], cell.tower.reload)
+                    self.n += 1
+                else:
+                    print(f'вам не хватает {tower_price - gold} золота')
             else:
                 pygame.time.set_timer(towers_reload[cell.tower], 0)
                 del towers_reload[cell.tower]
+                gold += cell.tower.price // 2
                 cell.set_tower(None)
             return cell
         elif cell != None:
@@ -265,6 +274,7 @@ def terminate():
     sys.exit()
 
 
+gold = 1000
 entities = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
 towers = pygame.sprite.Group()
@@ -301,7 +311,7 @@ def main():
                 if event.type == pygame.QUIT:
                     terminate()
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    print(my_board.get_click(event.pos))
+                    print(my_board.get_click(event.pos, 500))
                 if event.type == my_event:
                     for enemy in enemies:
                         cell1 = my_board.get_click((enemy.pos[0] + enemy.size[0], enemy.pos[1] + enemy.size[1]))
