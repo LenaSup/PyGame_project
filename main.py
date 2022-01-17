@@ -45,9 +45,15 @@ class LearningBut(pygame.sprite.Sprite):
         pass
 
 
+class MenuClouds(pygame.sprite.Sprite):
+    def __init__(self, group, size):
+        super().__init__(group)
+        pass
+
+
 class StartMenu:    # стартовое меню
-    def __init__(self, start_buttons_sprites, size):
-        self.start_buttons_sprites = start_buttons_sprites
+    def __init__(self, start_menu_sprites, size):
+        self.start_menu_sprites = start_menu_sprites
         pass
 
     def start_menu_display(self):
