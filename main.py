@@ -3,58 +3,68 @@ import sys
 import os
 
 
-class Cell: # общий класс клетки
-    def __init__(self, x, y, screen, size, can_build):
+def load_image(name, color_key=None):
+    fullname = os.path.join('data', name)
+    try:
+        image = pygame.image.load(fullname)
+    except pygame.error as message:
+        print('Не удаётся загрузить:', name)
+        raise SystemExit(message)
+    # try:
+    image = image.convert_alpha()
+    # except Exception as error:
+    #     print(error)
+    if color_key is not None:
+        if color_key == -1:
+            color_key = image.get_at((0, 0))
+        image.set_colorkey(color_key)
+    return image
+
+
+class Cell:  # общий класс клетки
+    def __init__(self, x, y, screen, size):
         self.name = self.__class__.__name__
-        self.can_build = can_build
         self.x, self.y = x, y
         self.size = size
         self.screen = screen
 
-    def __str__(self):
+    def __str__(self):  # удобное преобразование в строку
         return self.name
-
-    def is_can_build(self):
-        if self.can_build:
-            return 'Yes'
-        return 'No'
 
     def draw(self):
         pygame.draw.rect(self.screen, 'white', (self.x, self.y, self.size, self.size), 1)
 
-    def set_size(self, size):
+    def set_size(self, size):  # установить новые размеры клетки
         self.size = size
 
 
-class Road_cell(Cell): # клетка догори для мобов
+class Road_cell(Cell):  # клетка дороги для мобов
     def __init__(self, x, y, screen, size):
-        super().__init__(x, y, screen, size, False)
+        super().__init__(x, y, screen, size)
 
     def draw(self):
         pygame.draw.rect(self.screen, 'blue', (self.x, self.y, self.size, self.size), 5)
 
 
-class Pass_cell(Cell): # пустая клетка, декоративная
+class Pass_cell(Cell):  # пустая клетка (декоративная)
     def __init__(self, x, y, screen, size):
-        super().__init__(x, y, screen, size, False)
+        super().__init__(x, y, screen, size)
 
 
-class Building_cell(Cell): # клетка для стороительства башен
+class Building_cell(Cell):  # клетка для стороительства башен
     def __init__(self, x, y, screen, size, tower=None):
-        super().__init__(x, y, screen, size, True)
+        super().__init__(x, y, screen, size)
         self.tower = tower
 
-    def set_tower(self, tower):
+    def set_tower(self, tower):  # установить башня в клетку
         self.tower = tower
 
-    def draw(self):
+    def draw(self): # отрисовка клетки и башни
         pygame.draw.rect(self.screen, 'green', (self.x, self.y, self.size, self.size), 5)
-        if self.tower != None:
-            self.tower.draw()
 
 
-class Enemy(pygame.sprite.Sprite): # класс враждебного моба
-    def __init__(self, x, y, screen, width, height, health, image, damage=1, price=100, reload=1000, speed=1):
+class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
+    def __init__(self, x, y, screen, width, height, health, image, damage=10, price=100, speed=1):
         super().__init__(entities, enemies)
         self.name = self.__class__.__name__
         self.pos = x, y
@@ -65,7 +75,6 @@ class Enemy(pygame.sprite.Sprite): # класс враждебного моба
         self.speed = speed
         self.image = image
         self.price = price
-        self.image.fill('red')
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.pos[0], self.pos[1]
         self.path = None
@@ -75,18 +84,20 @@ class Enemy(pygame.sprite.Sprite): # класс враждебного моба
         self.is_move = True
         self.set_path(enemy_path)
 
-    def load_step(self, index): # загрузка следующего направления движения
+
+    def load_step(self, index):  # загрузка следующего направления движения из пути
         self.step = self.path[self.current_step]
         if self.step[0] < 0 or self.step[1] < 0:
             self.speed = abs(self.speed) * -1
         else:
             self.speed = abs(self.speed)
 
-    def move(self): # передвижение моба по пути из файла
+    def move(self):  # передвижение врага по пути из файла
         if self.is_move:
             if self.step[0] == 0:
                 if abs(self.step[1]) == self.steps and self.current_step == len(self.path) - 1:
                     self.is_move = False
+                    self.explosion()
                 elif abs(self.step[1]) == self.steps:
                     self.steps = 0
                     self.current_step += 1
@@ -98,6 +109,7 @@ class Enemy(pygame.sprite.Sprite): # класс враждебного моба
             else:
                 if abs(self.step[0]) == self.steps and self.current_step == len(self.path) - 1:
                     self.is_move = False
+                    self.explosion()
                 elif abs(self.step[0]) == self.steps:
                     self.steps = 0
                     self.current_step += 1
@@ -107,19 +119,26 @@ class Enemy(pygame.sprite.Sprite): # класс враждебного моба
                     self.steps += 1
                     self.rect.x, self.rect.y = self.pos[0], self.pos[1]
 
-    def check(self, cell1, cell2): # проверка(моб не может выйти за пределы дороги)
+    def explosion(self):  # суицидальный взрыв при подходу к замку наносящий урон
+        global castle_health
+        castle_health -= self.damage
+        print(castle_health)
+        self.health = 0
+        self.kill()
+
+    def check(self, cell1, cell2):  # проверка(враг не может выйти за пределы дороги)
         if self.speed > 0 and cell1.name == 'Road_cell':
             self.move()
         if self.speed < 0 and cell2.name == 'Road_cell':
             self.move()
 
-    def set_path(self, path):
+    def set_path(self, path):  # задать путь
         self.path = path
         self.current_step = 0
         self.steps = 0
         self.load_step(0)
 
-    def get_damage(self, damage):
+    def get_damage(self, damage):  # получение урона от башни
         if self.health - damage <= 0:
             self.health = 0
             self.is_move = False
@@ -128,12 +147,13 @@ class Enemy(pygame.sprite.Sprite): # класс враждебного моба
             self.kill()
         else:
             self.health -= damage
-            self.image.fill('blue')
+            # self.image.fill('blue')
 
 
-class Tower(pygame.sprite.Sprite): # класс башни
-    def __init__(self, x, y, screen, size, health, damage=50, radius=200, reload=1000, price=500, level=1):
-        super().__init__(towers)
+class Tower(pygame.sprite.Sprite):  # класс башни
+    def __init__(self, x, y, screen, size, health, image, damage=50, radius=200, reload=1000, price=500, level=1,
+                 is_splash=False, splash_radius=75):
+        super().__init__(towers, entities)
         self.name = self.__class__.__name__
         self.pos = x, y
         self.screen = screen
@@ -144,25 +164,27 @@ class Tower(pygame.sprite.Sprite): # класс башни
         self.radius = radius
         self.reload = reload
         self.level = level
-        self.image = pygame.Surface((radius * 2, radius * 2))
+        self.image = image
         self.rect = self.image.get_rect()
-        self.rect.x, self.rect.y = (self.pos[0] + self.size // 2) - self.radius,\
-                                   (self.pos[1] + self.size // 2) - self.radius
+        self.rect.x, self.rect.y = self.pos[0], self.pos[1]
         self.radius = radius
         self.focus = None
+        self.is_splash = is_splash
+        self.splash_radius = splash_radius
 
-    def draw(self):
-        pygame.draw.rect(self.screen, 'yellow', (self.pos[0], self.pos[1], self.size, self.size), 0)
-        pygame.draw.circle(self.screen, 'white', (self.pos[0] + self.size // 2, self.pos[1] + self.size // 2),
-                           self.radius, 1)
-
-    def fire(self):
-        if self.focus != None and self.focus.health != 0:
-            self.focus.get_damage(self.damage)
+    def fire(self):  # выстрел по захваченой цели
+        if self.focus != None and self.focus.health != 0 and pygame.sprite.collide_circle(self.focus, self):
+            if self.is_splash:
+                self.focus.radius = self.splash_radius
+                for enemy in enemies:
+                    if pygame.sprite.collide_circle(enemy, self.focus):
+                        enemy.get_damage(self.damage)
+            else:
+                self.focus.get_damage(self.damage)
         else:
-            self.focus_check()
+            self.focus_enemy()
 
-    def focus_check(self):
+    def focus_enemy(self):  # захват цели (при убийстве прошлой)
         for enemy in enemies:
             if pygame.sprite.collide_circle(enemy, self):
                 self.focus = enemy
@@ -170,7 +192,7 @@ class Tower(pygame.sprite.Sprite): # класс башни
                 break
 
 
-class Board:
+class Board:  # класс поля
     def __init__(self, screen, height=10, width=10, cell_size=80):
         self.screen = screen
         self.hieght = height
@@ -181,21 +203,21 @@ class Board:
         self.spis = ['white', 'red', 'blue']
         self.n = 11
 
-    def set_cell_size(self, cell_size): # установить новый размер клетки
+    def set_cell_size(self, cell_size):  # установить новый размер клетки
         self.cell_size = cell_size
         for h in range(self.hieght):
             for i in range(self.width):
                 self.board[h][i].set_size(self.cell_size)
 
-    def render(self): #
+    def render(self):  # отрисовка поля, клеток и башен на нём
         for i in range(self.hieght):
             for g in range(self.width):
                 self.board[i][g].draw()
 
-    def set_cell(self, x, y, cell): # заменить одну клетку на другую
+    def set_cell(self, x, y, cell):  # заменить одну клетку на другую
         self.board[y][x] = cell
 
-    def get_cell(self, pos): # проверка на какую клетку нажали
+    def get_cell(self, pos):  # проверка на какую клетку нажали
         cell_x = pos[0] // self.cell_size
         cell_y = pos[1] // self.cell_size
         if cell_y < 0 or cell_y >= self.width or cell_x < 0 or cell_x >= self.hieght:
@@ -203,14 +225,15 @@ class Board:
             return Pass_cell(0, 0, None, 80)
         return self.board[cell_x][cell_y], (cell_x, cell_y)
 
-    def get_click(self, mouse_pos, tower_price=500): # проверка на какую клетку нажали
+    def get_click(self, mouse_pos, tower_price=500):  # проверка на какую клетку нажали и установка башни
+        # (пока только одного типа)
         cell, pos = self.get_cell(mouse_pos)
         if cell and cell.name == 'Building_cell':
             global gold
             if cell.tower == None:
                 if gold >= tower_price:
                     cell.set_tower(Tower(pos[0] * self.cell_size + 10, pos[1] * self.cell_size + 10, self.screen,
-                                         60, 100, 100, 200, 1000, tower_price))
+                                         60, 100, load_image('car.jpg'), 100, 200, 1000, tower_price, True, 200))
                     gold -= tower_price
                     towers_reload[cell.tower] = pygame.USEREVENT + self.n
                     pygame.time.set_timer(towers_reload[cell.tower], cell.tower.reload)
@@ -221,19 +244,20 @@ class Board:
                 pygame.time.set_timer(towers_reload[cell.tower], 0)
                 del towers_reload[cell.tower]
                 gold += cell.tower.price // 2
+                cell.tower.kill()
                 cell.set_tower(None)
             return cell
         elif cell != None:
             return cell
 
 
-def load_level(file_level, file_settings):
+def load_level(file_level, file_settings):  # загрузка уровня и настроек игры из файлов
     with open(file_level, 'r')as Map:
         level_map = [line for line in Map]
     return level_map
 
 
-def generate_level(level_map, cell_size, screen):
+def generate_level(level_map, cell_size, screen):  # генерация карты
     list_entities = []
     for y in range(len(level_map)):
         lst = []
@@ -251,7 +275,7 @@ def generate_level(level_map, cell_size, screen):
     return list_entities, spawn_pos
 
 
-def load_path(name):
+def load_path(name):  # загрузка пути врага
     if os.path.isfile(name):
         file = open(name).readlines()
         path = []
@@ -263,17 +287,19 @@ def load_path(name):
             print('Неверный формат файла:', name)
 
 
-def find_key(dictionary, needle):
+def find_key(dictionary, needle):  # найти башню которая перезарядилась
     for key in dictionary.keys():
         if dictionary[key] == needle:
             return key
 
 
-def terminate():
+def terminate():  # закрытие программы
     pygame.quit()
     sys.exit()
 
 
+# константы используемые объектами или функциями
+castle_health = 100
 gold = 1000
 entities = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
@@ -283,44 +309,53 @@ enemy_path = load_path('data/enemy_path.txt')
 
 
 def main():
+    # создание окна
     pygame.init()
     size = width, height = 1280, 720
     screen = pygame.display.set_mode(size)
     pygame.display.set_caption('First board')
 
+    # создания поля
     my_board = Board(screen, 16, 9)
     my_board.set_cell_size(80)
 
+    # загрузка карты
     lvl = load_level('data/map.map', 'data/settings.txt')
     level, start_pos = generate_level(lvl, 80, screen)
     for x in range(len(level)):
         for y in range(len(level[x])):
             my_board.set_cell(x, y, level[x][y])
 
+    # стандартные таймеры событий
     spawn_enemy = pygame.USEREVENT + 1
     my_event = pygame.USEREVENT + 2
     pygame.time.set_timer(my_event, 10)
-    pygame.time.set_timer(spawn_enemy, 2000)
+    pygame.time.set_timer(spawn_enemy, 1000)
 
-    vrag = Enemy(start_pos[0] * 80 + 20, start_pos[1] * 80 + 20, screen, 40, 40, 200, pygame.Surface((40, 40)))
+    enemy_image = load_image('image.jpg')
+    vrag = (start_pos[0] * 80 + 20, start_pos[1] * 80 + 20, screen, 40, 40, 200, enemy_image)
 
     running = True
     while running:
             screen.fill((0, 0, 0))
+            if castle_health <= 0:
+                terminate()
             for event in pygame.event.get():
-                if event.type == pygame.QUIT:
+                if event.type == pygame.QUIT:  # выход из игры
                     terminate()
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # проверка на какую вклетку нажали,
+                    # если строительная то ставиться башня
                     print(my_board.get_click(event.pos, 500))
-                if event.type == my_event:
+                if event.type == my_event:  # проверка выходит ли враг за дорогу
                     for enemy in enemies:
                         cell1 = my_board.get_click((enemy.pos[0] + enemy.size[0], enemy.pos[1] + enemy.size[1]))
                         cell2 = my_board.get_click((enemy.pos[0] - 1, enemy.pos[1] - 1))
                         enemy.check(cell1, cell2)
-                if event.type == spawn_enemy:
-                    Enemy(start_pos[0] * 80 + 20, start_pos[1] * 80 + 20, screen, 40, 40, 200, pygame.Surface((40, 40)))
-                if event.type in towers_reload.values():
+                if event.type == spawn_enemy:  # создание врага раз в заданое кол-во секунд (сейчас 2) секунды
+                    Enemy(*[i for i in vrag[:]])
+                if event.type in towers_reload.values():  # выстрел башни по окондании перезрядки
                     find_key(towers_reload, event.type).fire()
+            # отрисовка
             my_board.render()
             entities.update()
             entities.draw(screen)
