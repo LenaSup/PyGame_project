@@ -64,7 +64,7 @@ class Building_cell(Cell):  # клетка для стороительства �
 
 
 class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
-    def __init__(self, x, y, screen, width, height, health, image, damage=10, price=100, speed=1):
+    def __init__(self, x, y, screen, width, height, health, image, damage=10, price=10, speed=1):
         super().__init__(entities, enemies)
         self.name = self.__class__.__name__
         self.pos = x, y
@@ -86,7 +86,7 @@ class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
 
 
     def load_step(self, index):  # загрузка следующего направления движения из пути
-        self.step = self.path[self.current_step]
+        self.step = self.path[index]
         if self.step[0] < 0 or self.step[1] < 0:
             self.speed = abs(self.speed) * -1
         else:
@@ -94,30 +94,37 @@ class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
 
     def move(self):  # передвижение врага по пути из файла
         if self.is_move:
-            if self.step[0] == 0:
-                if abs(self.step[1]) == self.steps and self.current_step == len(self.path) - 1:
-                    self.is_move = False
-                    self.explosion()
-                elif abs(self.step[1]) == self.steps:
-                    self.steps = 0
-                    self.current_step += 1
-                    self.load_step(self.current_step)
-                else:
-                    self.pos = self.pos[0], self.pos[1] + self.speed
-                    self.steps += 1
-                    self.rect.x, self.rect.y = self.pos[0], self.pos[1]
+            if self.rect.x + self.rect.width + self.speed >= width:
+                self.is_move = False
+                self.explosion()
+            elif self.rect.y + self.rect.height + self.speed >= height:
+                self.is_move = False
+                self.explosion()
             else:
-                if abs(self.step[0]) == self.steps and self.current_step == len(self.path) - 1:
-                    self.is_move = False
-                    self.explosion()
-                elif abs(self.step[0]) == self.steps:
-                    self.steps = 0
-                    self.current_step += 1
-                    self.load_step(self.current_step)
+                if self.step[0] == 0:
+                    if abs(self.step[1]) <= self.steps and self.current_step == len(self.path) - 1:
+                        self.is_move = False
+                        self.explosion()
+                    elif abs(self.step[1]) <= self.steps:
+                        self.steps = 0
+                        self.current_step += 1
+                        self.load_step(self.current_step)
+                    else:
+                        self.pos = self.pos[0], self.pos[1] + self.speed
+                        self.steps += abs(self.speed)
+                        self.rect.x, self.rect.y = self.pos[0], self.pos[1]
                 else:
-                    self.pos = self.pos[0] + self.speed, self.pos[1]
-                    self.steps += 1
-                    self.rect.x, self.rect.y = self.pos[0], self.pos[1]
+                    if abs(self.step[0]) <= self.steps and self.current_step == len(self.path) - 1:
+                        self.is_move = False
+                        self.explosion()
+                    elif abs(self.step[0]) <= self.steps:
+                        self.steps = 0
+                        self.current_step += 1
+                        self.load_step(self.current_step)
+                    else:
+                        self.pos = self.pos[0] + self.speed, self.pos[1]
+                        self.steps += abs(self.speed)
+                        self.rect.x, self.rect.y = self.pos[0], self.pos[1]
 
     def explosion(self):  # суицидальный взрыв при подходу к замку наносящий урон
         global castle_health
@@ -233,7 +240,7 @@ class Board:  # класс поля
             if cell.tower == None:
                 if gold >= tower_price:
                     cell.set_tower(Tower(pos[0] * self.cell_size + 10, pos[1] * self.cell_size + 10, self.screen,
-                                         60, 100, load_image('car.jpg'), 100, 200, 1000, tower_price, True, 200))
+                                         60, 100, load_image('car.jpg'), 50, 200, 1000, tower_price, True, 200))
                     gold -= tower_price
                     towers_reload[cell.tower] = pygame.USEREVENT + self.n
                     pygame.time.set_timer(towers_reload[cell.tower], cell.tower.reload)
@@ -306,12 +313,12 @@ enemies = pygame.sprite.Group()
 towers = pygame.sprite.Group()
 towers_reload = {}
 enemy_path = load_path('data/enemy_path.txt')
+size = width, height = 1280, 720
 
 
 def main():
     # создание окна
     pygame.init()
-    size = width, height = 1280, 720
     screen = pygame.display.set_mode(size)
     pygame.display.set_caption('First board')
 
@@ -334,6 +341,7 @@ def main():
 
     enemy_image = load_image('image.jpg')
     vrag = (start_pos[0] * 80 + 20, start_pos[1] * 80 + 20, screen, 40, 40, 200, enemy_image)
+    vrag_haste = (start_pos[0] * 80 + 20, start_pos[1] * 80 + 20, screen, 40, 40, 100, enemy_image, 10, 10, 2)
 
     running = True
     while running:
@@ -349,10 +357,11 @@ def main():
                 if event.type == my_event:  # проверка выходит ли враг за дорогу
                     for enemy in enemies:
                         cell1 = my_board.get_click((enemy.pos[0] + enemy.size[0], enemy.pos[1] + enemy.size[1]))
-                        cell2 = my_board.get_click((enemy.pos[0] - 1, enemy.pos[1] - 1))
+                        cell2 = my_board.get_click((enemy.pos[0] + enemy.speed, enemy.pos[1] + enemy.speed))
                         enemy.check(cell1, cell2)
                 if event.type == spawn_enemy:  # создание врага раз в заданое кол-во секунд (сейчас 2) секунды
-                    Enemy(*[i for i in vrag[:]])
+                    Enemy(*vrag[:])
+                    Enemy(*vrag_haste[:])
                 if event.type in towers_reload.values():  # выстрел башни по окондании перезрядки
                     find_key(towers_reload, event.type).fire()
             # отрисовка
