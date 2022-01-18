@@ -1,6 +1,7 @@
 import pygame
 import sys
 import os
+from enemies import *
 
 
 def load_image(name, color_key=None):
@@ -64,16 +65,15 @@ class Building_cell(Cell):  # клетка для стороительства �
 
 
 class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
-    def __init__(self, x, y, screen, width, height, health, image, damage=10, price=10, speed=1):
+    def __init__(self, x, y, screen, health, image, damage=10, price=10, speed=1):
         super().__init__(entities, enemies)
         self.name = self.__class__.__name__
         self.pos = x, y
         self.screen = screen
-        self.size = self.width, self.height = width, height
         self.health = health
         self.damage = damage
         self.speed = speed
-        self.image = image
+        self.image = load_image(image)
         self.price = price
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.pos[0], self.pos[1]
@@ -83,7 +83,6 @@ class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
         self.steps = None
         self.is_move = True
         self.set_path(enemy_path)
-
 
     def load_step(self, index):  # загрузка следующего направления движения из пути
         self.step = self.path[index]
@@ -158,19 +157,17 @@ class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
 
 
 class Tower(pygame.sprite.Sprite):  # класс башни
-    def __init__(self, x, y, screen, size, health, image, damage=50, radius=200, reload=1000, price=500, level=1,
+    def __init__(self, x, y, screen, health, image, damage=50, radius=200, reload=1000, price=500,
                  is_splash=False, splash_radius=75):
         super().__init__(towers, entities)
         self.name = self.__class__.__name__
         self.pos = x, y
         self.screen = screen
         self.health = health
-        self.size = size
         self.price = price
         self.damage = damage
         self.radius = radius
         self.reload = reload
-        self.level = level
         self.image = image
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.pos[0], self.pos[1]
@@ -240,7 +237,7 @@ class Board:  # класс поля
             if cell.tower == None:
                 if gold >= tower_price:
                     cell.set_tower(Tower(pos[0] * self.cell_size + 10, pos[1] * self.cell_size + 10, self.screen,
-                                         60, 100, load_image('car.jpg'), 50, 200, 1000, tower_price, True, 200))
+                                         100, load_image('car.jpg'), 50, 200, 1000, tower_price, True, 100))
                     gold -= tower_price
                     towers_reload[cell.tower] = pygame.USEREVENT + self.n
                     pygame.time.set_timer(towers_reload[cell.tower], cell.tower.reload)
@@ -305,6 +302,21 @@ def terminate():  # закрытие программы
     sys.exit()
 
 
+def finish_screen(screen):
+    run = True
+    while run:
+        screen.fill((0, 0, 0))
+        for event in pygame.event.get():
+            if event.type in (pygame.K_ESCAPE, pygame.K_RETURN) or\
+                    (event.type == pygame.MOUSEBUTTONUP and event.button == 1):
+                run = False
+                break
+            elif event.type == pygame.QUIT:
+                run = False
+                break
+        pygame.display.flip()
+
+
 # константы используемые объектами или функциями
 castle_health = 100
 gold = 1000
@@ -336,18 +348,19 @@ def main():
     # стандартные таймеры событий
     spawn_enemy = pygame.USEREVENT + 1
     my_event = pygame.USEREVENT + 2
-    pygame.time.set_timer(my_event, 10)
+    pygame.time.set_timer(my_event, 20)
     pygame.time.set_timer(spawn_enemy, 1000)
 
-    enemy_image = load_image('image.jpg')
-    vrag = (start_pos[0] * 80 + 20, start_pos[1] * 80 + 20, screen, 40, 40, 200, enemy_image)
-    vrag_haste = (start_pos[0] * 80 + 20, start_pos[1] * 80 + 20, screen, 40, 40, 100, enemy_image, 10, 10, 2)
+    enemy_default_settings = (start_pos[0] * 80 + my_board.cell_size // 4, start_pos[1] * 80 + my_board.cell_size // 4,
+                              screen)
 
     running = True
     while running:
             screen.fill((0, 0, 0))
             if castle_health <= 0:
-                terminate()
+                running = False
+                finish_screen(screen)
+                break
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:  # выход из игры
                     terminate()
@@ -356,12 +369,12 @@ def main():
                     print(my_board.get_click(event.pos, 500))
                 if event.type == my_event:  # проверка выходит ли враг за дорогу
                     for enemy in enemies:
-                        cell1 = my_board.get_click((enemy.pos[0] + enemy.size[0], enemy.pos[1] + enemy.size[1]))
+                        cell1 = my_board.get_click((enemy.pos[0] + enemy.rect.width, enemy.pos[1] + enemy.rect.height))
                         cell2 = my_board.get_click((enemy.pos[0] + enemy.speed, enemy.pos[1] + enemy.speed))
                         enemy.check(cell1, cell2)
                 if event.type == spawn_enemy:  # создание врага раз в заданое кол-во секунд (сейчас 2) секунды
-                    Enemy(*vrag[:])
-                    Enemy(*vrag_haste[:])
+                    Enemy(*enemy_default_settings, *armored_enemy)
+                    Enemy(*enemy_default_settings, *haste_enemy)
                 if event.type in towers_reload.values():  # выстрел башни по окондании перезрядки
                     find_key(towers_reload, event.type).fire()
             # отрисовка
@@ -369,7 +382,6 @@ def main():
             entities.update()
             entities.draw(screen)
             pygame.display.flip()
-    terminate()
 
 
 if __name__ == '__main__':
