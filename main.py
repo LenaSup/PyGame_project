@@ -4,20 +4,14 @@ import os
 import random
 
 
-def load_image(neme, color_key=None):   # ---
-    fullname = os.path.join('data', neme)
+def load_image(neme, color_key=None):   # Вся графика хронится в папке graphics
+    fullname = os.path.join('graphics', neme)   # Все png с прозрачным фоном, кроме задних планов
 
     try:
         image = pygame.image.load(fullname)
     except pygame.error as massage:
         raise SystemExit(massage)
-
-    if color_key is not None:
-        if color_key == -1:
-            color_key = image.get_at((0, 0))
-        image.set_colorkey(color_key)
-    else:
-        image = image.convert_alpha()
+    image = image.convert_alpha()
     return image
 
 
@@ -56,19 +50,34 @@ class StartMenu:    # стартовое меню
         self.start_menu_sprites = start_menu_sprites
         pass
 
-    def start_menu_display(self):
-        runnind = True
-        while runnind:
+    def start_menu_display(self, screen):
+        while True:
+            screen.blit(load_image('start_menu_background.png'), (0, 0))
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    runnind = False
-            pass
+                    sys.exit()
+            self.start_menu_sprites.draw(screen)
+            pygame.display.flip()
 
 
 def main():
     pygame.init()
     size = width, height = 1280, 720
     screen = pygame.display.set_mode(size)
+    pygame.display.set_caption('First board')
+    # ----
+    start_menu_sprites = pygame.sprite.Group()
+    start_menu = StartMenu(start_menu_sprites, size)    # Создание обекта стартового миню
+    start_menu.start_menu_display(screen)   # Вывод меню при включение (до основного цикла игры)
+    # ----
+    running = True
+    while running:
+        screen.fill((0, 0, 0))
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+        pygame.display.flip()
     pass
 
 
