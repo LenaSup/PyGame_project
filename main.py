@@ -54,12 +54,14 @@ class InfoBut(pygame.sprite.Sprite):    # Кнобка в меню
 
 
 class LearningBut(pygame.sprite.Sprite):    # Кнобка в меню
-    def __init__(self, group, size):
+    def __init__(self, group, size, screen):
         super().__init__(group)
-        pass
+        self.size = size
 
-    def click(self, pos):
-        pass
+
+    def click(self, pos, screen):
+        learning = Education()
+        learning.education_display(screen, self.size)
 
 
 class MenuClouds(pygame.sprite.Sprite):     # Облока в меню (облока в основкой игре меньше
@@ -89,6 +91,23 @@ class StartMenu:    # стартовое меню
                     done = self.start_menu_sprites.close_start_menu()   # Закрывает стартовое окно
             self.start_menu_sprites.draw(screen)                        # для выхода в меню выбора уровня
             pygame.display.flip()
+
+
+class Education:    # Окно обучения
+    def __init__(self):
+        pass
+
+    def education_display(self, screen, size):
+        done = True
+        while done:
+            background = pygame.transform.scale(load_image('empty_field.png'), size)
+            screen.blit(background, (0, 0))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONUP:
+                    pass
+        pygame.display.flip()
 
 
 def main():
