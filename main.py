@@ -15,6 +15,10 @@ def load_image(neme, color_key=None):   # Вся графика хронится
     return image
 
 
+class CloseBut(pygame.sprite.Sprite):
+    pass
+
+
 class Inscription(pygame.sprite.Sprite):    # Декоротивная тобличка с назвением игры
     def __init__(self, group, size):
         super().__init__(group)
@@ -22,11 +26,15 @@ class Inscription(pygame.sprite.Sprite):    # Декоротивная тобл�
 
 
 class AchievementBut(pygame.sprite.Sprite):     # Кнобка в меню
-    def __init__(self, group, size):
+    def __init__(self, group, size, screen):
         super().__init__(group)
-        pass
+        self.image = load_image('achievement_button.png')
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * 27, (size[1] // 180) * 27))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * 7, (size[1] // 180) * 41
+        self.size = size
 
-    def click(self, pos):
+    def click(self, pos, screen):
         pass
 
 
@@ -49,15 +57,19 @@ class InfoBut(pygame.sprite.Sprite):    # Кнобка в меню
         super().__init__(group)
         pass
 
-    def click(self, pos):
+    def click(self, pos, screen):
         pass
 
 
 class LearningBut(pygame.sprite.Sprite):    # Кнобка в меню
+
     def __init__(self, group, size, screen):
         super().__init__(group)
+        self.image = load_image('learning_button.png')
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * 27, (size[1] // 180) * 27))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * 7, (size[1] // 180) * 7
         self.size = size
-
 
     def click(self, pos, screen):
         learning = Education()
@@ -87,7 +99,8 @@ class StartMenu:    # стартовое меню
                     sys.exit()  # Выхлд из игры
                 if event.type == pygame.MOUSEBUTTONUP:
                     pos = pygame.mouse.get_pos()
-                    self.start_menu_sprites.click(pos)
+                    for i in self.start_menu_sprites:
+                        i.click(pos, screen)
                     done = self.start_menu_sprites.close_start_menu()   # Закрывает стартовое окно
             self.start_menu_sprites.draw(screen)                        # для выхода в меню выбора уровня
             pygame.display.flip()
@@ -117,6 +130,8 @@ def main():
     pygame.display.set_caption('First board')
     # ----  Дополненая часть к прописаному мэйно(до игрового цикла)
     start_menu_sprites = pygame.sprite.Group()  # Эта група спрайтов отображаемых в стартовом меню
+    achievement_but = AchievementBut(start_menu_sprites, size, screen)
+    learning_but = LearningBut(start_menu_sprites, size, screen)
     start_menu = StartMenu(start_menu_sprites)    # Создание обекта стартового миню
     start_menu.start_menu_display(screen, size)   # Вывод меню при включение
     # ----
