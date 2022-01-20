@@ -57,14 +57,28 @@ class ExitBut(pygame.sprite.Sprite):    # Кнобка в меню
 class InfoBut(pygame.sprite.Sprite):    # Кнобка в меню
     def __init__(self, group, size):
         super().__init__(group)
-        pass
+        self.image = load_image('info_button.png')
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * 17, (size[1] // 180) * 17))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * 7, (size[1] // 180) * 75
+        self.size = size
 
     def click(self, pos, screen):
         pass
 
 
 class PlayBut(pygame.sprite.Sprite):
-    pass
+    def __init__(self, group, size):
+        super().__init__(group)
+        self.image = load_image('play_button.png')
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * 120, (size[1] // 180) * 57))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * 100, (size[1] // 180) * 110
+        self.size = size
+
+    def click(self, pos, screen):
+        if self.rect.collidepoint(pos):
+            pass
 
 
 class LearningBut(pygame.sprite.Sprite):    # Кнобка в меню
@@ -90,6 +104,18 @@ class MenuClouds(pygame.sprite.Sprite):     # Облока в меню (обло
 
     def update(self):
         pass
+
+
+class CrossBtn():
+    pass
+
+
+class ArrowBtnLeft():
+    pass
+
+
+class ArrowBtnRight():
+    pass
 
 
 class StartMenu:    # стартовое меню
@@ -142,6 +168,10 @@ class Achievement:    # Меню очевок
             pygame.display.flip()
 
 
+class Info():
+    pass
+
+
 def main():
     pygame.init()
     size = width, height = 1280, 720
@@ -152,6 +182,8 @@ def main():
     achievement_but = AchievementBut(start_menu_sprites, size, screen)
     learning_but = LearningBut(start_menu_sprites, size, screen)
     exit_but = ExitBut(start_menu_sprites, size)
+    play_but = PlayBut(start_menu_sprites, size)
+    info_btn = InfoBut(start_menu_sprites, size)
     start_menu = StartMenu(start_menu_sprites)    # Создание обекта стартового миню
     start_menu.start_menu_display(screen, size)   # Вывод меню при включение
     # ----
