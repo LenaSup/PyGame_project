@@ -15,7 +15,7 @@ def load_image(neme, color_key=None):   # Вся графика хронится
     return image
 
 
-class CloseBut(pygame.sprite.Sprite):
+class CloseBut(pygame.sprite.Sprite):   # -
     pass
 
 
@@ -35,21 +35,23 @@ class AchievementBut(pygame.sprite.Sprite):     # Кнобка в меню
         self.size = size
 
     def click(self, pos, screen):
-        pass
+        if self.rect.collidepoint(pos):
+            achievement = Achievement()
+            achievement.achievement_display(screen, self.size)
 
 
 class ExitBut(pygame.sprite.Sprite):    # Кнобка в меню
     def __init__(self, group, size):
         super().__init__(group)
-        self.done = True
-        pass
+        self.image = load_image('exit_button.png')
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * 27, (size[1] // 180) * 27))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * 286, (size[1] // 180) * 7
+        self.size = size
 
-    def click(self, pos):
-        self.done = False
-        pass
-
-    def close_start_menu(self):
-        return self.done
+    def click(self, pos, screen):
+        if self.rect.collidepoint(pos):
+            sys.exit()
 
 
 class InfoBut(pygame.sprite.Sprite):    # Кнобка в меню
@@ -59,6 +61,10 @@ class InfoBut(pygame.sprite.Sprite):    # Кнобка в меню
 
     def click(self, pos, screen):
         pass
+
+
+class PlayBut(pygame.sprite.Sprite):
+    pass
 
 
 class LearningBut(pygame.sprite.Sprite):    # Кнобка в меню
@@ -72,8 +78,9 @@ class LearningBut(pygame.sprite.Sprite):    # Кнобка в меню
         self.size = size
 
     def click(self, pos, screen):
-        learning = Education()
-        learning.education_display(screen, self.size)
+        if self.rect.collidepoint(pos):
+            learning = Education()
+            learning.education_display(screen, self.size)
 
 
 class MenuClouds(pygame.sprite.Sprite):     # Облока в меню (облока в основкой игре меньше
@@ -94,15 +101,14 @@ class StartMenu:    # стартовое меню
         while done:
             background = pygame.transform.scale(load_image('start_menu_background.png'), size)
             screen.blit(background, (0, 0))
+            self.start_menu_sprites.draw(screen)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()  # Выхлд из игры
-                if event.type == pygame.MOUSEBUTTONUP:
+                if event.type == pygame.MOUSEBUTTONDOWN:
                     pos = pygame.mouse.get_pos()
                     for i in self.start_menu_sprites:
                         i.click(pos, screen)
-                    done = self.start_menu_sprites.close_start_menu()   # Закрывает стартовое окно
-            self.start_menu_sprites.draw(screen)                        # для выхода в меню выбора уровня
             pygame.display.flip()
 
 
@@ -118,9 +124,22 @@ class Education:    # Окно обучения
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
-                if event.type == pygame.MOUSEBUTTONUP:
-                    pass
-        pygame.display.flip()
+            pygame.display.flip()
+
+
+class Achievement:    # Меню очевок
+    def __init__(self):
+        pass
+
+    def achievement_display(self, screen, size):
+        done = True
+        while done:
+            background = pygame.transform.scale(load_image('empty_field.png'), size)
+            screen.blit(background, (0, 0))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+            pygame.display.flip()
 
 
 def main():
@@ -132,6 +151,7 @@ def main():
     start_menu_sprites = pygame.sprite.Group()  # Эта група спрайтов отображаемых в стартовом меню
     achievement_but = AchievementBut(start_menu_sprites, size, screen)
     learning_but = LearningBut(start_menu_sprites, size, screen)
+    exit_but = ExitBut(start_menu_sprites, size)
     start_menu = StartMenu(start_menu_sprites)    # Создание обекта стартового миню
     start_menu.start_menu_display(screen, size)   # Вывод меню при включение
     # ----
