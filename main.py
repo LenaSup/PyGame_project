@@ -255,10 +255,17 @@ class Board:  # класс поля
             return cell
 
 
-def load_level(file_level, file_settings):  # загрузка уровня и настроек игры из файлов
-    with open(file_level, 'r')as Map:
+def load_level(file_level, file_waves):  # загрузка уровня и настроек игры из файлов
+    with open(file_level, 'r') as Map:
         level_map = [line for line in Map]
-    return level_map
+    with open(file_waves, 'r') as Waves:
+        waves_data = []
+        waves_enemies = []
+        waves = [line for line in Waves]
+        for wave in [i.split(' ') for i in waves]:
+            waves_data.append([int(i) for i in wave[0].split(':')])
+            waves_enemies.append([int(i) for i in wave[1:]])
+    return level_map, waves_data, waves_enemies
 
 
 def generate_level(level_map, cell_size, screen):  # генерация карты
@@ -339,7 +346,8 @@ def main():
     my_board.set_cell_size(80)
 
     # загрузка карты
-    lvl = load_level('data/map.map', 'data/settings.txt')
+    current_wave, enemy_type = 0, 0
+    lvl, waves, wave_enemies = load_level('data/map.map', 'data/waves.txt')
     level, start_pos = generate_level(lvl, 80, screen)
     for x in range(len(level)):
         for y in range(len(level[x])):
@@ -348,11 +356,13 @@ def main():
     # стандартные таймеры событий
     spawn_enemy = pygame.USEREVENT + 1
     my_event = pygame.USEREVENT + 2
-    pygame.time.set_timer(my_event, 20)
-    pygame.time.set_timer(spawn_enemy, 1000)
+    pygame.time.set_timer(my_event, 15)
+    pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
 
     enemy_default_settings = (start_pos[0] * 80 + my_board.cell_size // 4, start_pos[1] * 80 + my_board.cell_size // 4,
                               screen)
+    enemy_types = [default_enemy, haste_enemy, armored_enemy]
+    n_enemies = [0 for _ in range(len(enemy_types))]
 
     running = True
     while running:
@@ -372,10 +382,24 @@ def main():
                         cell1 = my_board.get_click((enemy.pos[0] + enemy.rect.width, enemy.pos[1] + enemy.rect.height))
                         cell2 = my_board.get_click((enemy.pos[0] + enemy.speed, enemy.pos[1] + enemy.speed))
                         enemy.check(cell1, cell2)
-                if event.type == spawn_enemy:  # создание врага раз в заданое кол-во секунд (сейчас 2) секунды
-                    Enemy(*enemy_default_settings, *armored_enemy)
-                    Enemy(*enemy_default_settings, *haste_enemy)
-                if event.type in towers_reload.values():  # выстрел башни по окондании перезрядки
+                if event.type == spawn_enemy:  # создание врага раз в заданое кол-во секунд (сейчас 2.5) секунды
+                    flag = True
+                    while flag:
+                        if sum(n_enemies) == sum(wave_enemies[current_wave]):
+                            current_wave += 1
+                            n_enemies = [0 for _ in range(len(enemy_types))]
+                            if current_wave >= len(wave_enemies):
+                                pygame.time.set_timer(spawn_enemy, 0)
+                                flag = False
+                                break
+                            pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
+                        if n_enemies[enemy_type % len(enemy_types)] < wave_enemies[current_wave][enemy_type % len(enemy_types)]:
+                            Enemy(*enemy_default_settings, *enemy_types[enemy_type % len(enemy_types)])
+                            n_enemies[enemy_type % len(enemy_types)] += 1
+                            enemy_type += 1
+                            flag = False
+                            break
+                if event.type in towers_reload.values():  # выстрел башни по окончании перезрядки
                     find_key(towers_reload, event.type).fire()
             # отрисовка
             my_board.render()
