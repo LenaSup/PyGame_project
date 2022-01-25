@@ -34,7 +34,7 @@ class AchievementBut(pygame.sprite.Sprite):     # Кнобка в меню
         self.rect.left, self.rect.top = (size[0] // 320) * 7, (size[1] // 180) * 41
         self.size = size
 
-    def click(self, pos, screen):
+    def click(self, pos, screen, start_menu):
         if self.rect.collidepoint(pos):
             achievement = Achievement()
             achievement.achievement_display(screen, self.size)
@@ -49,7 +49,7 @@ class ExitBut(pygame.sprite.Sprite):    # Кнобка в меню
         self.rect.left, self.rect.top = (size[0] // 320) * 286, (size[1] // 180) * 7
         self.size = size
 
-    def click(self, pos, screen):
+    def click(self, pos, screen, start_menu):
         if self.rect.collidepoint(pos):
             sys.exit()
 
@@ -63,7 +63,7 @@ class InfoBut(pygame.sprite.Sprite):    # Кнобка в меню
         self.rect.left, self.rect.top = (size[0] // 320) * 7, (size[1] // 180) * 75
         self.size = size
 
-    def click(self, pos, screen):
+    def click(self, pos, screen, start_menu):
         pass
 
 
@@ -75,10 +75,16 @@ class PlayBut(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.left, self.rect.top = (size[0] // 320) * 100, (size[1] // 180) * 110
         self.size = size
+        self.selected_map = None
 
-    def click(self, pos, screen):
+    def click(self, pos, screen, start_menu):
         if self.rect.collidepoint(pos):
-            pass
+            levels = Levels()
+            levels.levels_display(screen, self.size)
+            start_menu.close()
+
+    def choice(self):
+        pass
 
 
 class LearningBut(pygame.sprite.Sprite):    # Кнобка в меню
@@ -91,7 +97,7 @@ class LearningBut(pygame.sprite.Sprite):    # Кнобка в меню
         self.rect.left, self.rect.top = (size[0] // 320) * 7, (size[1] // 180) * 7
         self.size = size
 
-    def click(self, pos, screen):
+    def click(self, pos, screen, start_menu):
         if self.rect.collidepoint(pos):
             learning = Education()
             learning.education_display(screen, self.size)
@@ -121,10 +127,10 @@ class ArrowBtnRight():
 class StartMenu:    # стартовое меню
     def __init__(self, start_menu_sprites):
         self.start_menu_sprites = start_menu_sprites
+        self.done = True
 
     def start_menu_display(self, screen, size):
-        done = True
-        while done:
+        while self.done:
             background = pygame.transform.scale(load_image('start_menu_background.png'), size)
             screen.blit(background, (0, 0))
             self.start_menu_sprites.draw(screen)
@@ -134,8 +140,11 @@ class StartMenu:    # стартовое меню
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     pos = pygame.mouse.get_pos()
                     for i in self.start_menu_sprites:
-                        i.click(pos, screen)
+                        i.click(pos, screen, StartMenu)
             pygame.display.flip()
+
+    def close(self):
+        self.done = False
 
 
 class Education:    # Окно обучения
@@ -170,6 +179,21 @@ class Achievement:    # Меню очевок
 
 class Info():
     pass
+
+
+class Levels():
+    def __init__(self):
+        pass
+
+    def levels_display(self, screen, size):
+        done = True
+        while done:
+            background = pygame.transform.scale(load_image('empty_field.png'), size)
+            screen.blit(background, (0, 0))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+            pygame.display.flip()
 
 
 def main():
