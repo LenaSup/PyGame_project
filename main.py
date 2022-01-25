@@ -114,16 +114,22 @@ class MenuClouds(pygame.sprite.Sprite):     # Облока в меню (обло
         pass
 
 
-class CrossBtn():
-    pass
+class CrossBtn(pygame.sprite.Sprite):
+    def __init__(self, size):
+        super().__init__()
+        pass
 
 
 class ArrowBtnLeft():
-    pass
+    def __init__(self, size):
+        super().__init__()
+        pass
 
 
 class ArrowBtnRight():
-    pass
+    def __init__(self, size):
+        super().__init__()
+        pass
 
 
 class StartMenu:    # стартовое меню
