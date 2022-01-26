@@ -1,6 +1,7 @@
 import pygame
 import sys
 import os
+import sqlite3
 from entities import *
 
 
@@ -150,6 +151,9 @@ class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
             self.is_move = False
             global gold
             gold += self.price
+            db.execute(f"UPDATE statistic SET Meaning = "
+                       f"{db.execute(f'SELECT Meaning FROM statistic WHERE Id = 7').fetchone()[0] + 1} WHERE Id = 7")
+            db.commit()
             self.kill()
         else:
             self.health -= damage
@@ -228,7 +232,6 @@ class Board:  # класс поля
         return self.board[cell_x][cell_y], (cell_x, cell_y)
 
     def get_click(self, mouse_pos, tower_price=500, tower_data=None):  # проверка на какую клетку нажали и установка башни
-        # (пока только одного типа)
         cell, pos = self.get_cell(mouse_pos)
         if cell and cell.name == 'Building_cell':
             global gold
@@ -237,6 +240,11 @@ class Board:  # класс поля
                     cell.set_tower(Tower(pos[0] * self.cell_size + 10, pos[1] * self.cell_size + 10, self.screen,
                                          *tower_data))
                     gold -= tower_price
+                    db.execute(f"UPDATE statistic SET meaning ="
+                               f"{db.execute(f'SELECT meaning FROM statistic WHERE Id = 6').fetchone()[0] + tower_price}"
+                               f" WHERE Id = 6")
+                    db.commit()
+                    print(db.execute(f"SELECT meaning FROM statistic WHERE Id = 6"))
                     towers_reload[cell.tower] = pygame.USEREVENT + self.n
                     pygame.time.set_timer(towers_reload[cell.tower], cell.tower.reload)
                     self.n += 1
@@ -302,6 +310,7 @@ def find_key(dictionary, needle):  # найти башню которая пер
 
 
 def terminate():  # закрытие программы
+    db.close()
     pygame.quit()
     sys.exit()
 
@@ -322,6 +331,8 @@ def finish_screen(screen):
 
 
 # константы используемые объектами или функциями
+db = sqlite3.connect('user_data.sqlite3')
+db.cursor()
 castle_health = 100
 gold = 1500
 entities = pygame.sprite.Group()
@@ -355,9 +366,12 @@ def main():
     # стандартные таймеры событий
     spawn_enemy = pygame.USEREVENT + 1
     my_event = pygame.USEREVENT + 2
+    time_is_passing = pygame.USEREVENT + 3
     pygame.time.set_timer(my_event, 15)
     pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
+    pygame.time.set_timer(time_is_passing, 1000)
     pause_wave = 10000
+    time_level = 0
 
     enemy_default_settings = (start_pos[0] * 80 + my_board.cell_size // 4, start_pos[1] * 80 + my_board.cell_size // 4,
                               screen)
@@ -412,8 +426,12 @@ def main():
                                 pygame.time.set_timer(spawn_enemy, 0)
                                 if current_level < len(levels_data):
                                     lvl, waves, wave_enemies = levels_data[current_level]
+                                    db.execute(f"UPDATE statistic SET meaning = {time_level} WHERE Id ="
+                                               f"{current_level + 1} AND meaning > {time_level}")
                             flag = False
                             break
+                if event.type == time_is_passing:
+                    time_level += 1
                 if event.type in towers_reload.values():  # выстрел башни по окончании перезрядки
                     find_key(towers_reload, event.type).fire()
             # отрисовка
