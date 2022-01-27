@@ -108,7 +108,6 @@ class MenuClouds(pygame.sprite.Sprite):     # Облока в меню
         self.speed = random.randint(1, 2)
         self.direction = random.choice([1, -1])
         self.timer = 0
-        print(self.direction, self.speed)
         f = 'start_menu_cloud_' + str(random.randint(1, 4)) + '.png'
         self.image = load_image(f)
         rect = self.image.get_rect().size
