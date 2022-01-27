@@ -2,6 +2,7 @@ import pygame
 import sys
 import os
 import random
+# 731836
 
 
 def load_image(neme, color_key=None):   # Вся графика хронится в папке graphics
