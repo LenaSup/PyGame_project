@@ -13,7 +13,7 @@ def load_image(neme, color_key=None):   # Вся графика хронится
         raise SystemExit(massage)
     image = image.convert_alpha()
     return image
-
+#2313
 
 class CloseBut(pygame.sprite.Sprite):   # -
     pass
