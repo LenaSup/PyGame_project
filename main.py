@@ -228,23 +228,23 @@ class Levels():
                     pos = pygame.mouse.get_pos()
                     if pos[0] in range(coord[0][0], coord[0][0] + levels[0].get_width())\
                             and pos[1] in range(coord[0][1], coord[0][1] + levels[0].get_height()):
-                        self.selected_map = 1
+                        self.selected_map = 0
                         done = False
                     if pos[0] in range(coord[1][0], coord[1][0] + levels[1].get_width())\
                             and pos[1] in range(coord[1][1], coord[1][1] + levels[1].get_height()):
-                        self.selected_map = 2
+                        self.selected_map = 1
                         done = False
                     if pos[0] in range(coord[2][0], coord[2][0] + levels[2].get_width())\
                             and pos[1] in range(coord[2][1], coord[2][1] + levels[2].get_height()):
-                        self.selected_map = 3
+                        self.selected_map = 2
                         done = False
                     if pos[0] in range(coord[3][0], coord[3][0] + levels[3].get_width())\
                             and pos[1] in range(coord[3][1], coord[3][1] + levels[3].get_height()):
-                        self.selected_map = 4
+                        self.selected_map = 3
                         done = False
                     if pos[0] in range(coord[4][0], coord[4][0] + levels[4].get_width())\
                             and pos[1] in range(coord[4][1], coord[4][1] + levels[4].get_height()):
-                        self.selected_map = 5
+                        self.selected_map = 4
                         done = False
             pygame.display.flip()
             clock.tick(fps)
@@ -582,7 +582,20 @@ def main():
     # создания поля
     my_board = Board(screen, 16, 9)
     my_board.set_cell_size(80)
-    current_level = 0
+
+    # часть Лены
+    #
+    # ----  Дополненая часть к прописаному мэйно(до игрового цикла)
+    start_menu_sprites = pygame.sprite.Group()  # Эта група спрайтов отображаемых в стартовом меню
+    achievement_but = AchievementBut(start_menu_sprites, size, screen)
+    learning_but = LearningBut(start_menu_sprites, size, screen)
+    exit_but = ExitBut(start_menu_sprites, size)
+    info_btn = InfoBut(start_menu_sprites, size)
+    start_menu = StartMenu(start_menu_sprites)  # Создание обекта стартового миню
+    play_but = PlayBut(start_menu_sprites, size, start_menu)
+    start_menu.start_menu_display(screen, size)   # Вывод меню при включение
+    current_level = play_but.map()   # номер карты
+    #
 
     # загрузка карты
     current_wave, enemy_type = 0, 0
@@ -610,19 +623,6 @@ def main():
     towers_types = [default_tower, sniper_tower, mortire]
     type_tower = 0
     current_tower = towers_types[type_tower]
-    #
-    # часть Лены
-    #
-    # ----  Дополненая часть к прописаному мэйно(до игрового цикла)
-    start_menu_sprites = pygame.sprite.Group()  # Эта група спрайтов отображаемых в стартовом меню
-    achievement_but = AchievementBut(start_menu_sprites, size, screen)
-    learning_but = LearningBut(start_menu_sprites, size, screen)
-    exit_but = ExitBut(start_menu_sprites, size)
-    info_btn = InfoBut(start_menu_sprites, size)
-    start_menu = StartMenu(start_menu_sprites)  # Создание обекта стартового миню
-    play_but = PlayBut(start_menu_sprites, size, start_menu)
-    start_menu.start_menu_display(screen, size)   # Вывод меню при включение
-    map_ = play_but.map()   # номер карты
 
     running = True
 
@@ -650,10 +650,8 @@ def main():
                     while flag:
                         try:
                             if sum(n_enemies) == sum(wave_enemies[current_wave]):
-                                print(current_wave)
                                 current_wave += 1
                                 n_enemies = [0 for _ in range(len(enemy_types))]
-                                print(current_wave)
                                 pygame.time.set_timer(spawn_enemy, pause_wave)
                             if current_wave < len(wave_enemies) and n_enemies[enemy_type % len(enemy_types)] < wave_enemies\
                                 [current_wave][enemy_type % len(enemy_types)]:
