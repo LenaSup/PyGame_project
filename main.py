@@ -8,17 +8,12 @@ from entities import *
 
 def load_image(neme, color_key=None):   # Вся графика хронится в папке graphics
     fullname = os.path.join('graphics', neme)   # Все png с прозрачным фоном, кроме задних планов
-
     try:
         image = pygame.image.load(fullname)
     except pygame.error as massage:
         raise SystemExit(massage)
     image = image.convert_alpha()
     return image
-
-
-class CloseBut(pygame.sprite.Sprite):   # -
-    pass
 
 
 class Inscription(pygame.sprite.Sprite):    # Декоротивная тобличка с назвением игры
@@ -107,13 +102,30 @@ class LearningBut(pygame.sprite.Sprite):    # Кнобка в меню
             learning.education_display(screen, self.size)
 
 
-class MenuClouds(pygame.sprite.Sprite):     # Облока в меню (облока в основкой игре меньше
-    def __init__(self, group, size):        # и имеют другой диопозон кординат спавна)
+class MenuClouds(pygame.sprite.Sprite):     # Облока в меню
+    def __init__(self, group, size):
         super().__init__(group)
-        pass
+        self.speed = random.randint(1, 2)
+        self.direction = random.choice([1, -1])
+        self.timer = 0
+        print(self.direction, self.speed)
+        f = 'start_menu_cloud_' + str(random.randint(1, 4)) + '.png'
+        self.image = load_image(f)
+        rect = self.image.get_rect().size
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * random.randint(1, 250),\
+                                        (size[1] // 180) * random.randint(1, 110)
+        self.size = size
 
     def update(self):
-        pass
+        if self.timer == self.speed:
+            self.timer = 0
+            self.rect.left += self.direction
+        else:
+            self.timer += 1
+        if self.rect.left > self.size[0] or self.rect.width + self.rect.left < 0:
+            self.direction = -self.direction
 
 
 class CrossBtn(pygame.sprite.Sprite):
@@ -140,11 +152,16 @@ class StartMenu:    # стартовое меню
         self.done = True
 
     def start_menu_display(self, screen, size):
+        clouds = pygame.sprite.Group()
+        menu_clouds = []
+        for i in range(random.randint(2, 3)):
+            menu_clouds.append(MenuClouds(clouds, size))
         fps = 60
         clock = pygame.time.Clock()
         background = pygame.transform.scale(load_image('start_menu_background.png'), size)
         while self.done:
             screen.blit(background, (0, 0))
+            clouds.draw(screen)
             self.start_menu_sprites.draw(screen)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -153,6 +170,7 @@ class StartMenu:    # стартовое меню
                     pos = pygame.mouse.get_pos()
                     for i in self.start_menu_sprites:
                         i.click(pos, screen)
+            clouds.update()
             pygame.display.flip()
             clock.tick(fps)
 
@@ -610,10 +628,7 @@ def main():
     towers_types = [default_tower, sniper_tower, mortire]
     type_tower = 0
     current_tower = towers_types[type_tower]
-    #
-    # часть Лены
-    #
-    # ----  Дополненая часть к прописаному мэйно(до игрового цикла)
+    # ----  до игрового цикла
     start_menu_sprites = pygame.sprite.Group()  # Эта група спрайтов отображаемых в стартовом меню
     achievement_but = AchievementBut(start_menu_sprites, size, screen)
     learning_but = LearningBut(start_menu_sprites, size, screen)
