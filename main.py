@@ -107,13 +107,30 @@ class LearningBut(pygame.sprite.Sprite):    # Кнобка в меню
             learning.education_display(screen, self.size)
 
 
-class MenuClouds(pygame.sprite.Sprite):     # Облока в меню (облока в основкой игре меньше
-    def __init__(self, group, size):        # и имеют другой диопозон кординат спавна)
+class MenuClouds(pygame.sprite.Sprite):     # Облока в меню
+    def __init__(self, group, size):
         super().__init__(group)
-        pass
+        self.speed = random.randint(1, 2)
+        self.direction = random.choice([1, -1])
+        self.timer = 0
+        print(self.direction, self.speed)
+        f = 'start_menu_cloud_' + str(random.randint(1, 4)) + '.png'
+        self.image = load_image(f)
+        rect = self.image.get_rect().size
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * random.randint(1, 250),\
+                                        (size[1] // 180) * random.randint(1, 110)
+        self.size = size
 
     def update(self):
-        pass
+        if self.timer == self.speed:
+            self.timer = 0
+            self.rect.left += self.direction
+        else:
+            self.timer += 1
+        if self.rect.left > self.size[0] or self.rect.width + self.rect.left < 0:
+            self.direction = -self.direction
 
 
 class CrossBtn(pygame.sprite.Sprite):
@@ -140,11 +157,16 @@ class StartMenu:    # стартовое меню
         self.done = True
 
     def start_menu_display(self, screen, size):
+        clouds = pygame.sprite.Group()
+        menu_clouds = []
+        for i in range(random.randint(2, 3)):
+            menu_clouds.append(MenuClouds(clouds, size))
         fps = 60
         clock = pygame.time.Clock()
         background = pygame.transform.scale(load_image('start_menu_background.png'), size)
         while self.done:
             screen.blit(background, (0, 0))
+            clouds.draw(screen)
             self.start_menu_sprites.draw(screen)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -153,8 +175,12 @@ class StartMenu:    # стартовое меню
                     pos = pygame.mouse.get_pos()
                     for i in self.start_menu_sprites:
                         i.click(pos, screen)
+            clouds.update()
             pygame.display.flip()
             clock.tick(fps)
+
+    def close(self):
+        self.done = False
 
     def close(self):
         self.done = False
@@ -594,7 +620,9 @@ def main():
     my_board.set_cell_size(80)
 
     # часть Лены
+    background = pygame.transform.scale(load_image('sky.png'), size)
     current_level = main_menu(screen)
+    playing_field = pygame.transform.scale(load_image('background_0.png'), size)
     #
 
     # загрузка карты
@@ -680,6 +708,8 @@ def main():
             if event.type in towers_reload.values():  # выстрел башни по окончании перезрядки
                 find_key(towers_reload, event.type).fire()
         # отрисовка
+        screen.blit(background, (0, 0))  # Фон с небом
+        screen.blit(playing_field, (0, 0))      # Игровое поле
         my_board.render()
         entities.update()
         entities.draw(screen)
