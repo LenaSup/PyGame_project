@@ -66,7 +66,9 @@ class InfoBut(pygame.sprite.Sprite):    # Кнобка в меню
         self.size = size
 
     def click(self, pos, screen):
-        pass
+        if self.rect.collidepoint(pos):
+            info = Info()
+            info.info_display(screen, self.size)
 
 
 class PlayBut(pygame.sprite.Sprite):
@@ -92,7 +94,6 @@ class PlayBut(pygame.sprite.Sprite):
 
 
 class LearningBut(pygame.sprite.Sprite):    # Кнобка в меню
-
     def __init__(self, group, size, screen):
         super().__init__(group)
         self.image = load_image('learning_button.png')
@@ -134,9 +135,20 @@ class MenuClouds(pygame.sprite.Sprite):     # Облока в меню
 
 
 class CrossBtn(pygame.sprite.Sprite):
-    def __init__(self, size):
-        super().__init__()
-        pass
+    def __init__(self, size, group):
+        super().__init__(group)
+        self.image = load_image('x.png')
+        rect = self.image.get_rect().size
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * (287 - rect[0]), (size[1] // 180) * 30
+        self.size = size
+
+    def click(self, pos):
+        if self.rect.collidepoint(pos):
+            return False
+        else:
+            return True
 
 
 class ArrowBtnLeft():
@@ -182,9 +194,6 @@ class StartMenu:    # стартовое меню
     def close(self):
         self.done = False
 
-    def close(self):
-        self.done = False
-
 
 class Education:    # Окно обучения
     def __init__(self):
@@ -195,35 +204,68 @@ class Education:    # Окно обучения
         fps = 60
         clock = pygame.time.Clock()
         background = pygame.transform.scale(load_image('empty_field.png'), size)
+        btn = pygame.sprite.Group()
+        cross_btn = CrossBtn(size, btn)
         while done:
             screen.blit(background, (0, 0))
+            btn.draw(screen)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    pos = pygame.mouse.get_pos()
+                    done = cross_btn.click(pos)
             pygame.display.flip()
             clock.tick(fps)
 
 
 class Achievement:    # Меню очевок
     def __init__(self):
-        pass
+        f = pygame.font.Font('7X7PixelizedRegular.ttf', 50)
+        text = ''
 
     def achievement_display(self, screen, size):
         done = True
         fps = 60
         clock = pygame.time.Clock()
         background = pygame.transform.scale(load_image('empty_field.png'), size)
+        btn = pygame.sprite.Group()
+        cross_btn = CrossBtn(size, btn)
         while done:
             screen.blit(background, (0, 0))
+            btn.draw(screen)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    pos = pygame.mouse.get_pos()
+                    done = cross_btn.click(pos)
             pygame.display.flip()
             clock.tick(fps)
 
 
 class Info():
-    pass
+    def __init__(self):
+        pass
+
+    def info_display(self, screen, size):
+        done = True
+        fps = 60
+        clock = pygame.time.Clock()
+        background = pygame.transform.scale(load_image('empty_field.png'), size)
+        btn = pygame.sprite.Group()
+        cross_btn = CrossBtn(size, btn)
+        while done:
+            screen.blit(background, (0, 0))
+            btn.draw(screen)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    pos = pygame.mouse.get_pos()
+                    done = cross_btn.click(pos)
+            pygame.display.flip()
+            clock.tick(fps)
 
 
 class Levels():
