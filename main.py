@@ -151,16 +151,38 @@ class CrossBtn(pygame.sprite.Sprite):
             return True
 
 
-class ArrowBtnLeft():
-    def __init__(self, size):
-        super().__init__()
-        pass
+class ArrowBtnLeft(pygame.sprite.Sprite):
+    def __init__(self, size, group):
+        super().__init__(group)
+        self.image = load_image('arrow.png')
+        rect = self.image.get_rect().size
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * 34, (size[1] // 180) * 135
+        self.size = size
+
+    def click(self, pos):
+        if self.rect.collidepoint(pos):
+            return True
+        else:
+            return False
 
 
-class ArrowBtnRight():
-    def __init__(self, size):
-        super().__init__()
-        pass
+class ArrowBtnRight(pygame.sprite.Sprite):
+    def __init__(self, size, group):
+        super().__init__(group)
+        self.image = pygame.transform.flip(load_image('arrow.png'), True, False)
+        rect = self.image.get_rect().size
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * 270, (size[1] // 180) * 135
+        self.size = size
+
+    def click(self, pos):
+        if self.rect.collidepoint(pos):
+            return True
+        else:
+            return False
 
 
 class StartMenu:    # стартовое меню
@@ -197,16 +219,10 @@ class StartMenu:    # стартовое меню
 
 class Education:    # Окно обучения
     def __init__(self):
-        #with open('education.txt', 'rt') as text:
-        #    pages =
-        # print(type(text))
-        # self.text = text.split('\n')
-        #text = open('education.txt').readlines()
-        #print(text)
-        f = pygame.font.Font('7X7PixelizedRegular.ttf', 34)
-        self.text = f.render('1234567890апен', False, (0, 0, 0))
-        text = f.render('1234567890апен', False, (0, 0, 0))
-        self.education = [[self.text, text], 1]
+        with open('education.txt', 'rt', encoding='UTF-8') as text:
+            self.pages = text.read().split('\n---\n')
+        self.number_page = 0
+        self.f = pygame.font.Font('7X7PixelizedRegular.ttf', 32)
 
     def education_display(self, screen, size):
         done = True
@@ -215,10 +231,14 @@ class Education:    # Окно обучения
         background = pygame.transform.scale(load_image('empty_field.png'), size)
         btn = pygame.sprite.Group()
         cross_btn = CrossBtn(size, btn)
+        arrow_btn_right = ArrowBtnRight(size, btn)
+        arrow_btn_left = ArrowBtnLeft(size, btn)
         while done:
+            page = self.pages[self.number_page].split('\n')
             screen.blit(background, (0, 0))
-            for i in range(len(self.education[0])):
-                screen.blit(self.education[0][i], ((size[0] // 320) * 30, (size[1] // 180) * (30 + 13 * i)))
+            for i in range(len(page)):
+                screen.blit(self.f.render(page[i], False, (0, 0, 0)), ((size[0] // 320) * 30,
+                                                                       (size[1] // 180) * (30 + 13 * i)))
             btn.draw(screen)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -226,6 +246,10 @@ class Education:    # Окно обучения
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     pos = pygame.mouse.get_pos()
                     done = cross_btn.click(pos)
+                    if arrow_btn_right.click(pos) and self.number_page < len(self.pages) - 1:
+                        self.number_page += 1
+                    if arrow_btn_left.click(pos) and self.number_page != 0:
+                        self.number_page -= 1
             pygame.display.flip()
             clock.tick(fps)
 
