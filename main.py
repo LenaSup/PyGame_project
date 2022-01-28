@@ -559,6 +559,16 @@ def finish_screen(screen):
                 break
         pygame.display.flip()
 
+def main_menu(screen):
+    start_menu_sprites = pygame.sprite.Group()  # Эта група спрайтов отображаемых в стартовом меню
+    achievement_but = AchievementBut(start_menu_sprites, size, screen)
+    learning_but = LearningBut(start_menu_sprites, size, screen)
+    exit_but = ExitBut(start_menu_sprites, size)
+    info_btn = InfoBut(start_menu_sprites, size)
+    start_menu = StartMenu(start_menu_sprites)  # Создание обекта стартового миню
+    play_but = PlayBut(start_menu_sprites, size, start_menu)
+    start_menu.start_menu_display(screen, size)   # Вывод меню при включение
+    return play_but.map()   # номер карты
 
 # константы используемые объектами или функциями
 db = sqlite3.connect('user_data.sqlite3')
@@ -584,17 +594,7 @@ def main():
     my_board.set_cell_size(80)
 
     # часть Лены
-    #
-    # ----  Дополненая часть к прописаному мэйно(до игрового цикла)
-    start_menu_sprites = pygame.sprite.Group()  # Эта група спрайтов отображаемых в стартовом меню
-    achievement_but = AchievementBut(start_menu_sprites, size, screen)
-    learning_but = LearningBut(start_menu_sprites, size, screen)
-    exit_but = ExitBut(start_menu_sprites, size)
-    info_btn = InfoBut(start_menu_sprites, size)
-    start_menu = StartMenu(start_menu_sprites)  # Создание обекта стартового миню
-    play_but = PlayBut(start_menu_sprites, size, start_menu)
-    start_menu.start_menu_display(screen, size)   # Вывод меню при включение
-    current_level = play_but.map()   # номер карты
+    current_level = main_menu(screen)
     #
 
     # загрузка карты
@@ -630,7 +630,7 @@ def main():
             screen.fill((0, 0, 0))
             if castle_health <= 0:
                 running = False
-                finish_screen(screen)
+                main_menu(screen)
                 break
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:  # выход из игры
@@ -651,16 +651,19 @@ def main():
                         try:
                             if sum(n_enemies) == sum(wave_enemies[current_wave]):
                                 current_wave += 1
-                                n_enemies = [0 for _ in range(len(enemy_types))]
+                                nenemies = [0 for in range(len(enemy_types))]
                                 pygame.time.set_timer(spawn_enemy, pause_wave)
-                            if current_wave < len(wave_enemies) and n_enemies[enemy_type % len(enemy_types)] < wave_enemies\
-                                [current_wave][enemy_type % len(enemy_types)]:
+                                flag = False
+                                break
+                            if current_wave < len(wave_enemies) and n_enemies[enemy_type % len(enemy_types)] < \
+                                    wave_enemies \
+                                            [current_wave][enemy_type % len(enemy_types)]:
                                 pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
                                 Enemy(*enemy_default_settings, *enemy_types[enemy_type % len(enemy_types)])
                                 n_enemies[enemy_type % len(enemy_types)] += 1
-                                enemy_type += 1
                                 flag = False
                                 break
+                            enemy_type += 1
                         except Exception as error:
                             print(error)
                             if not enemies:
