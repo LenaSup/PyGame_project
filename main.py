@@ -296,7 +296,7 @@ class Building_cell(Cell):  # клетка для стороительства �
 
 
 class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
-    def __init__(self, x, y, screen, health, image, damage=10, price=10, speed=1):
+    def __init__(self, x, y, screen, health, image, damage=10, price=10, speed=1, path=None):
         super().__init__(entities, enemies)
         self.name = self.__class__.__name__
         self.pos = x, y
@@ -313,7 +313,7 @@ class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
         self.step = None
         self.steps = None
         self.is_move = True
-        self.set_path(enemy_path)
+        self.set_path(path)
 
     def load_step(self, index):  # загрузка следующего направления движения из пути
         self.step = self.path[index]
@@ -579,7 +579,7 @@ entities = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
 towers = pygame.sprite.Group()
 towers_reload = {}
-enemy_path = load_path('data/enemy_path.txt')
+enemy_paths = [load_path('data/enemy_path.txt')]
 size = width, height = 1280, 720
 
 
@@ -627,63 +627,63 @@ def main():
     running = True
 
     while running:
-            screen.fill((0, 0, 0))
-            if castle_health <= 0:
-                running = False
-                main_menu(screen)
-                break
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:  # выход из игры
-                    terminate()
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # проверка на какую вклетку нажали,
-                    # если строительная то ставиться башня
-                    print(my_board.get_click(event.pos, current_tower[4], current_tower))
-                    type_tower = (type_tower + 1) % len(towers_types)
-                    current_tower = towers_types[type_tower]
-                if event.type == my_event:  # проверка выходит ли враг за дорогу
-                    for enemy in enemies:
-                        cell1 = my_board.get_click((enemy.pos[0] + enemy.rect.width, enemy.pos[1] + enemy.rect.height))
-                        cell2 = my_board.get_click((enemy.pos[0] + enemy.speed, enemy.pos[1] + enemy.speed))
-                        enemy.check(cell1, cell2)
-                if event.type == spawn_enemy:  # создание врага раз в заданое кол-во секунд (сейчас 2.5) секунды
-                    flag = True
-                    while flag:
-                        try:
-                            if sum(n_enemies) == sum(wave_enemies[current_wave]):
-                                current_wave += 1
-                                nenemies = [0 for in range(len(enemy_types))]
-                                pygame.time.set_timer(spawn_enemy, pause_wave)
-                                flag = False
-                                break
-                            if current_wave < len(wave_enemies) and n_enemies[enemy_type % len(enemy_types)] < \
-                                    wave_enemies \
-                                            [current_wave][enemy_type % len(enemy_types)]:
-                                pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
-                                Enemy(*enemy_default_settings, *enemy_types[enemy_type % len(enemy_types)])
-                                n_enemies[enemy_type % len(enemy_types)] += 1
-                                flag = False
-                                break
-                            enemy_type += 1
-                        except Exception as error:
-                            print(error)
-                            if not enemies:
-                                current_level += 1
-                                pygame.time.set_timer(spawn_enemy, 0)
-                                if current_level < len(levels_data):
-                                    lvl, waves, wave_enemies = levels_data[current_level]
-                                    db.execute(f"UPDATE statistic SET meaning = {time_level} WHERE Id ="
-                                               f"{current_level + 1} AND meaning > {time_level}")
+        screen.fill((0, 0, 0))
+        if castle_health <= 0:
+            running = False
+            main_menu(screen)
+            break
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:  # выход из игры
+                terminate()
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # проверка на какую вклетку нажали,
+                # если строительная то ставиться башня
+                print(my_board.get_click(event.pos, current_tower[4], current_tower))
+                type_tower = (type_tower + 1) % len(towers_types)
+                current_tower = towers_types[type_tower]
+            if event.type == my_event:  # проверка выходит ли враг за дорогу
+                for enemy in enemies:
+                    cell1 = my_board.get_click((enemy.pos[0] + enemy.rect.width, enemy.pos[1] + enemy.rect.height))
+                    cell2 = my_board.get_click((enemy.pos[0] + enemy.speed, enemy.pos[1] + enemy.speed))
+                    enemy.check(cell1, cell2)
+            if event.type == spawn_enemy:  # создание врага раз в заданое кол-во секунд (сейчас 2.5) секунды
+                flag = True
+                while flag:
+                    try:
+                        if sum(n_enemies) == sum(wave_enemies[current_wave]):
+                            current_wave += 1
+                            n_enemies = [0 for _ in range(len(enemy_types))]
+                            pygame.time.set_timer(spawn_enemy, pause_wave)
                             flag = False
                             break
-                if event.type == time_is_passing:
-                    time_level += 1
-                if event.type in towers_reload.values():  # выстрел башни по окончании перезрядки
-                    find_key(towers_reload, event.type).fire()
-            # отрисовка
-            my_board.render()
-            entities.update()
-            entities.draw(screen)
-            pygame.display.flip()
+                        if current_wave < len(wave_enemies) and n_enemies[enemy_type % len(enemy_types)] < \
+                                wave_enemies[current_wave][enemy_type % len(enemy_types)]:
+                            pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
+                            Enemy(*enemy_default_settings, *enemy_types[enemy_type % len(enemy_types)],
+                                  enemy_paths[current_level])
+                            n_enemies[enemy_type % len(enemy_types)] += 1
+                            flag = False
+                            break
+                        enemy_type += 1
+                    except Exception as error:
+                        print(error)
+                        if not enemies:
+                            current_level += 1
+                            pygame.time.set_timer(spawn_enemy, 0)
+                            if current_level < len(levels_data):
+                                lvl, waves, wave_enemies = levels_data[current_level]
+                                db.execute(f"UPDATE statistic SET meaning = {time_level} WHERE Id ="
+                                           f"{current_level + 1} AND meaning > {time_level}")
+                        flag = False
+                        break
+            if event.type == time_is_passing:
+                time_level += 1
+            if event.type in towers_reload.values():  # выстрел башни по окончании перезрядки
+                find_key(towers_reload, event.type).fire()
+        # отрисовка
+        my_board.render()
+        entities.update()
+        entities.draw(screen)
+        pygame.display.flip()
 
 
 if __name__ == '__main__':
