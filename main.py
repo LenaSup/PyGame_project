@@ -253,46 +253,40 @@ class Levels():
         return self.selected_map
 
 
-class Cell:  # общий класс клетки
-    def __init__(self, x, y, screen, size):
+class Cell(pygame.sprite.Sprite):  # общий класс клетки
+    def __init__(self, x, y, screen, size, image=None):
+        super().__init__(cells)
         self.name = self.__class__.__name__
-        self.x, self.y = x, y
         self.size = size
         self.screen = screen
+        if image != None:
+            self.image = pygame.transform.scale(image, (size, size))
+        else:
+            self.image = pygame.Surface((size, size))
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = x, y
 
     def __str__(self):  # удобное преобразование в строку
         return self.name
 
-    def draw(self):
-        pygame.draw.rect(self.screen, 'white', (self.x, self.y, self.size, self.size), 1)
-
-    def set_size(self, size):  # установить новые размеры клетки
-        self.size = size
-
 
 class Road_cell(Cell):  # клетка дороги для мобов
-    def __init__(self, x, y, screen, size):
-        super().__init__(x, y, screen, size)
-
-    def draw(self):
-        pygame.draw.rect(self.screen, 'blue', (self.x, self.y, self.size, self.size), 5)
+    def __init__(self, x, y, screen, size, image):
+        super().__init__(x, y, screen, size, image)
 
 
 class Pass_cell(Cell):  # пустая клетка (декоративная)
-    def __init__(self, x, y, screen, size):
-        super().__init__(x, y, screen, size)
+    def __init__(self, x, y, screen, size, image=None):
+        super().__init__(x, y, screen, size, image)
 
 
 class Building_cell(Cell):  # клетка для стороительства башен
-    def __init__(self, x, y, screen, size, tower=None):
-        super().__init__(x, y, screen, size)
+    def __init__(self, x, y, screen, size, image, tower=None):
+        super().__init__(x, y, screen, size, image)
         self.tower = tower
 
     def set_tower(self, tower):  # установить башня в клетку
         self.tower = tower
-
-    def draw(self): # отрисовка клетки и башни
-        pygame.draw.rect(self.screen, 'green', (self.x, self.y, self.size, self.size), 5)
 
 
 class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
@@ -457,7 +451,6 @@ class Board:  # класс поля
         cell_x = pos[0] // self.cell_size
         cell_y = pos[1] // self.cell_size
         if cell_y < 0 or cell_y >= self.width or cell_x < 0 or cell_x >= self.hieght:
-            print('error')
             return Pass_cell(0, 0, None, 80)
         return self.board[cell_x][cell_y], (cell_x, cell_y)
 
@@ -474,7 +467,6 @@ class Board:  # класс поля
                                f"{db.execute(f'SELECT meaning FROM statistic WHERE Id = 6').fetchone()[0] + tower_price}"
                                f" WHERE Id = 6")
                     db.commit()
-                    print(db.execute(f"SELECT meaning FROM statistic WHERE Id = 6"))
                     towers_reload[cell.tower] = pygame.USEREVENT + self.n
                     pygame.time.set_timer(towers_reload[cell.tower], cell.tower.reload)
                     self.n += 1
@@ -504,21 +496,38 @@ def load_level(file_level, file_waves):  # загрузка уровня и на
 
 
 def generate_level(level_map, cell_size, screen):  # генерация карты
-    list_entities = []
+    list_cells = []
     for y in range(len(level_map)):
         lst = []
         for x in range(len(level_map[y])):
             if level_map[y][x] == '.':
-                lst.append(Pass_cell(x * cell_size, y * cell_size, screen, cell_size))
+                lst.append(Pass_cell(x * cell_size, y * cell_size, screen, cell_size, load_image('.car.jpg')))
             elif level_map[y][x] == '0':
-                lst.append(Building_cell(x * cell_size, y * cell_size, screen, cell_size))
+                lst.append(Building_cell(x * cell_size, y * cell_size, screen, cell_size, load_image('base.png')))
             elif level_map[y][x] == '#':
-                lst.append(Road_cell(x * cell_size, y * cell_size, screen, cell_size))
-            elif level_map[y][x] == '@':
-                lst.append(Road_cell(x * cell_size, y * cell_size, screen, cell_size))
+                lst.append(Road_cell(x * cell_size, y * cell_size, screen, cell_size, pygame.transform.rotate(load_image('road_4.png'), 90)))
                 spawn_pos = (x, y)
-        list_entities.append(lst)
-    return list_entities, spawn_pos
+            elif level_map[y][x] == '@':
+                lst.append(Road_cell(x * cell_size, y * cell_size, screen, cell_size, pygame.transform.rotate(load_image('road_4.png'), 180)))
+                spawn_pos = (x, y)
+            elif level_map[y][x] == '$':
+                lst.append(Road_cell(x * cell_size, y * cell_size, screen, cell_size, load_image('road_4.png')))
+            elif level_map[y][x] == '%':
+                lst.append(Road_cell(x * cell_size, y * cell_size, screen, cell_size, pygame.transform.rotate(load_image('road_4.png'), 270)))
+            elif level_map[y][x] == 'f':
+                lst.append(Road_cell(x * cell_size, y * cell_size, screen, cell_size, load_image('road_1.png')))
+            elif level_map[y][x] == 'r':
+                lst.append(Road_cell(x * cell_size, y * cell_size, screen, cell_size, pygame.transform.rotate(load_image('road_1.png'), 90)))
+            elif level_map[y][x] == 's':
+                lst.append(Road_cell(x * cell_size, y * cell_size, screen, cell_size, load_image('road_3.png')))
+            elif level_map[y][x] == 'd':
+                lst.append(Road_cell(x * cell_size, y * cell_size, screen, cell_size, pygame.transform.rotate(load_image('road_3.png'), 180)))
+            elif level_map[y][x] == 'w':
+                lst.append(Road_cell(x * cell_size, y * cell_size, screen, cell_size, pygame.transform.rotate(load_image('road_3.png'), 270)))
+            elif level_map[y][x] == 'a':
+                lst.append(Road_cell(x * cell_size, y * cell_size, screen, cell_size, pygame.transform.rotate(load_image('road_3.png'), 90)))
+        list_cells.append(lst)
+    return list_cells, spawn_pos
 
 
 def load_path(name):  # загрузка пути врага
@@ -578,6 +587,7 @@ gold = 1500
 entities = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
 towers = pygame.sprite.Group()
+cells = pygame.sprite.Group()
 towers_reload = {}
 enemy_paths = [load_path('data/enemy_path.txt')]
 size = width, height = 1280, 720
@@ -591,7 +601,6 @@ def main():
 
     # создания поля
     my_board = Board(screen, 16, 9)
-    my_board.set_cell_size(80)
 
     # часть Лены
     current_level = main_menu(screen)
@@ -615,9 +624,9 @@ def main():
     pygame.time.set_timer(time_is_passing, 1000)
     pause_wave = 10000
     time_level = 0
-    global castle_health
+    global castle_health, entities, enemies, towers, towers_reload, gold, cells
 
-    enemy_default_settings = (start_pos[0] * 80 + my_board.cell_size // 4, start_pos[1] * 80 + my_board.cell_size // 4,
+    enemy_default_settings = (start_pos[0] * 80, start_pos[1] * 80 + my_board.cell_size // 4,
                               screen)
     enemy_types = [default_enemy, haste_enemy, armored_enemy]
     n_enemies = [0 for _ in range(len(enemy_types))]
@@ -651,16 +660,11 @@ def main():
                 pause_wave = 10000
                 time_level = 0
 
-                enemy_default_settings = (start_pos[0] * 80 + my_board.cell_size // 4,
-                                          start_pos[1] * 80 + my_board.cell_size // 4, screen)
-                enemy_types = [default_enemy, haste_enemy, armored_enemy]
                 n_enemies = [0 for _ in range(len(enemy_types))]
-                towers_types = [default_tower, sniper_tower, mortire]
                 type_tower = 0
                 current_tower = towers_types[type_tower]
 
-                global towers_reload, towers, entities, enemies, gold
-                castle_health += 100 - castle_health
+                castle_health = 100
                 gold = 1500
                 entities = pygame.sprite.Group()
                 enemies = pygame.sprite.Group()
@@ -713,11 +717,39 @@ def main():
             if event.type in towers_reload.values():  # выстрел башни по окончании перезрядки
                 find_key(towers_reload, event.type).fire()
         if castle_health <= 0:
-            running = False
-            main_menu(screen)
-            break
+            current_level = main_menu(screen)
+            # загрузка карты
+            current_wave, enemy_type = 0, 0
+            levels_data = [load_level('data/map1.map', 'data/waves1.txt')]
+            lvl, waves, wave_enemies = levels_data[current_level]
+            level, start_pos = generate_level(lvl, 80, screen)
+            for x in range(len(level)):
+                for y in range(len(level[x])):
+                    my_board.set_cell(x, y, level[x][y])
+
+            # стандартные таймеры событий
+            spawn_enemy = pygame.USEREVENT + 1
+            my_event = pygame.USEREVENT + 2
+            time_is_passing = pygame.USEREVENT + 3
+            pygame.time.set_timer(my_event, 15)
+            pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
+            pygame.time.set_timer(time_is_passing, 1000)
+            pause_wave = 10000
+            time_level = 0
+
+            n_enemies = [0 for _ in range(len(enemy_types))]
+            type_tower = 0
+            current_tower = towers_types[type_tower]
+
+            castle_health = 100
+            gold = 1500
+            entities = pygame.sprite.Group()
+            enemies = pygame.sprite.Group()
+            towers = pygame.sprite.Group()
+            towers_reload = {}
         # отрисовка
-        my_board.render()
+        cells.update()
+        cells.draw(screen)
         entities.update()
         entities.draw(screen)
         pygame.display.flip()
