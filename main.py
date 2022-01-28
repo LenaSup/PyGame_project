@@ -615,6 +615,7 @@ def main():
     pygame.time.set_timer(time_is_passing, 1000)
     pause_wave = 10000
     time_level = 0
+    global castle_health
 
     enemy_default_settings = (start_pos[0] * 80 + my_board.cell_size // 4, start_pos[1] * 80 + my_board.cell_size // 4,
                               screen)
@@ -628,11 +629,43 @@ def main():
 
     while running:
         screen.fill((0, 0, 0))
-        if castle_health <= 0:
-            running = False
-            main_menu(screen)
-            break
         for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                current_level = main_menu(screen)
+                # загрузка карты
+                current_wave, enemy_type = 0, 0
+                levels_data = [load_level('data/map1.map', 'data/waves1.txt')]
+                lvl, waves, wave_enemies = levels_data[current_level]
+                level, start_pos = generate_level(lvl, 80, screen)
+                for x in range(len(level)):
+                    for y in range(len(level[x])):
+                        my_board.set_cell(x, y, level[x][y])
+
+                # стандартные таймеры событий
+                spawn_enemy = pygame.USEREVENT + 1
+                my_event = pygame.USEREVENT + 2
+                time_is_passing = pygame.USEREVENT + 3
+                pygame.time.set_timer(my_event, 15)
+                pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
+                pygame.time.set_timer(time_is_passing, 1000)
+                pause_wave = 10000
+                time_level = 0
+
+                enemy_default_settings = (start_pos[0] * 80 + my_board.cell_size // 4,
+                                          start_pos[1] * 80 + my_board.cell_size // 4, screen)
+                enemy_types = [default_enemy, haste_enemy, armored_enemy]
+                n_enemies = [0 for _ in range(len(enemy_types))]
+                towers_types = [default_tower, sniper_tower, mortire]
+                type_tower = 0
+                current_tower = towers_types[type_tower]
+
+                global towers_reload, towers, entities, enemies, gold
+                castle_health += 100 - castle_health
+                gold = 1500
+                entities = pygame.sprite.Group()
+                enemies = pygame.sprite.Group()
+                towers = pygame.sprite.Group()
+                towers_reload = {}
             if event.type == pygame.QUIT:  # выход из игры
                 terminate()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # проверка на какую вклетку нажали,
@@ -679,6 +712,10 @@ def main():
                 time_level += 1
             if event.type in towers_reload.values():  # выстрел башни по окончании перезрядки
                 find_key(towers_reload, event.type).fire()
+        if castle_health <= 0:
+            running = False
+            main_menu(screen)
+            break
         # отрисовка
         my_board.render()
         entities.update()
