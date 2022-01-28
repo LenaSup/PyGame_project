@@ -8,12 +8,17 @@ from entities import *
 
 def load_image(neme, color_key=None):   # Вся графика хронится в папке graphics
     fullname = os.path.join('graphics', neme)   # Все png с прозрачным фоном, кроме задних планов
+
     try:
         image = pygame.image.load(fullname)
     except pygame.error as massage:
         raise SystemExit(massage)
     image = image.convert_alpha()
     return image
+
+
+class CloseBut(pygame.sprite.Sprite):   # -
+    pass
 
 
 class Inscription(pygame.sprite.Sprite):    # Декоротивная тобличка с назвением игры
@@ -102,29 +107,13 @@ class LearningBut(pygame.sprite.Sprite):    # Кнобка в меню
             learning.education_display(screen, self.size)
 
 
-class MenuClouds(pygame.sprite.Sprite):     # Облока в меню
-    def __init__(self, group, size):
+class MenuClouds(pygame.sprite.Sprite):     # Облока в меню (облока в основкой игре меньше
+    def __init__(self, group, size):        # и имеют другой диопозон кординат спавна)
         super().__init__(group)
-        self.speed = random.randint(1, 2)
-        self.direction = random.choice([1, -1])
-        self.timer = 0
-        f = 'start_menu_cloud_' + str(random.randint(1, 4)) + '.png'
-        self.image = load_image(f)
-        rect = self.image.get_rect().size
-        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
-        self.rect = self.image.get_rect()
-        self.rect.left, self.rect.top = (size[0] // 320) * random.randint(1, 250),\
-                                        (size[1] // 180) * random.randint(1, 110)
-        self.size = size
+        pass
 
     def update(self):
-        if self.timer == self.speed:
-            self.timer = 0
-            self.rect.left += self.direction
-        else:
-            self.timer += 1
-        if self.rect.left > self.size[0] or self.rect.width + self.rect.left < 0:
-            self.direction = -self.direction
+        pass
 
 
 class CrossBtn(pygame.sprite.Sprite):
@@ -151,16 +140,11 @@ class StartMenu:    # стартовое меню
         self.done = True
 
     def start_menu_display(self, screen, size):
-        clouds = pygame.sprite.Group()
-        menu_clouds = []
-        for i in range(random.randint(2, 3)):
-            menu_clouds.append(MenuClouds(clouds, size))
         fps = 60
         clock = pygame.time.Clock()
         background = pygame.transform.scale(load_image('start_menu_background.png'), size)
         while self.done:
             screen.blit(background, (0, 0))
-            clouds.draw(screen)
             self.start_menu_sprites.draw(screen)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -169,7 +153,6 @@ class StartMenu:    # стартовое меню
                     pos = pygame.mouse.get_pos()
                     for i in self.start_menu_sprites:
                         i.click(pos, screen)
-            clouds.update()
             pygame.display.flip()
             clock.tick(fps)
 
@@ -245,23 +228,23 @@ class Levels():
                     pos = pygame.mouse.get_pos()
                     if pos[0] in range(coord[0][0], coord[0][0] + levels[0].get_width())\
                             and pos[1] in range(coord[0][1], coord[0][1] + levels[0].get_height()):
-                        self.selected_map = 1
+                        self.selected_map = 0
                         done = False
                     if pos[0] in range(coord[1][0], coord[1][0] + levels[1].get_width())\
                             and pos[1] in range(coord[1][1], coord[1][1] + levels[1].get_height()):
-                        self.selected_map = 2
+                        self.selected_map = 1
                         done = False
                     if pos[0] in range(coord[2][0], coord[2][0] + levels[2].get_width())\
                             and pos[1] in range(coord[2][1], coord[2][1] + levels[2].get_height()):
-                        self.selected_map = 3
+                        self.selected_map = 2
                         done = False
                     if pos[0] in range(coord[3][0], coord[3][0] + levels[3].get_width())\
                             and pos[1] in range(coord[3][1], coord[3][1] + levels[3].get_height()):
-                        self.selected_map = 4
+                        self.selected_map = 3
                         done = False
                     if pos[0] in range(coord[4][0], coord[4][0] + levels[4].get_width())\
                             and pos[1] in range(coord[4][1], coord[4][1] + levels[4].get_height()):
-                        self.selected_map = 5
+                        self.selected_map = 4
                         done = False
             pygame.display.flip()
             clock.tick(fps)
@@ -313,7 +296,7 @@ class Building_cell(Cell):  # клетка для стороительства �
 
 
 class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
-    def __init__(self, x, y, screen, health, image, damage=10, price=10, speed=1):
+    def __init__(self, x, y, screen, health, image, damage=10, price=10, speed=1, path=None):
         super().__init__(entities, enemies)
         self.name = self.__class__.__name__
         self.pos = x, y
@@ -330,7 +313,7 @@ class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
         self.step = None
         self.steps = None
         self.is_move = True
-        self.set_path(enemy_path)
+        self.set_path(path)
 
     def load_step(self, index):  # загрузка следующего направления движения из пути
         self.step = self.path[index]
@@ -576,6 +559,16 @@ def finish_screen(screen):
                 break
         pygame.display.flip()
 
+def main_menu(screen):
+    start_menu_sprites = pygame.sprite.Group()  # Эта група спрайтов отображаемых в стартовом меню
+    achievement_but = AchievementBut(start_menu_sprites, size, screen)
+    learning_but = LearningBut(start_menu_sprites, size, screen)
+    exit_but = ExitBut(start_menu_sprites, size)
+    info_btn = InfoBut(start_menu_sprites, size)
+    start_menu = StartMenu(start_menu_sprites)  # Создание обекта стартового миню
+    play_but = PlayBut(start_menu_sprites, size, start_menu)
+    start_menu.start_menu_display(screen, size)   # Вывод меню при включение
+    return play_but.map()   # номер карты
 
 # константы используемые объектами или функциями
 db = sqlite3.connect('user_data.sqlite3')
@@ -586,7 +579,7 @@ entities = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
 towers = pygame.sprite.Group()
 towers_reload = {}
-enemy_path = load_path('data/enemy_path.txt')
+enemy_paths = [load_path('data/enemy_path.txt')]
 size = width, height = 1280, 720
 
 
@@ -599,7 +592,10 @@ def main():
     # создания поля
     my_board = Board(screen, 16, 9)
     my_board.set_cell_size(80)
-    current_level = 0
+
+    # часть Лены
+    current_level = main_menu(screen)
+    #
 
     # загрузка карты
     current_wave, enemy_type = 0, 0
@@ -627,76 +623,67 @@ def main():
     towers_types = [default_tower, sniper_tower, mortire]
     type_tower = 0
     current_tower = towers_types[type_tower]
-    # ----  до игрового цикла
-    start_menu_sprites = pygame.sprite.Group()  # Эта група спрайтов отображаемых в стартовом меню
-    achievement_but = AchievementBut(start_menu_sprites, size, screen)
-    learning_but = LearningBut(start_menu_sprites, size, screen)
-    exit_but = ExitBut(start_menu_sprites, size)
-    info_btn = InfoBut(start_menu_sprites, size)
-    start_menu = StartMenu(start_menu_sprites)  # Создание обекта стартового миню
-    play_but = PlayBut(start_menu_sprites, size, start_menu)
-    start_menu.start_menu_display(screen, size)   # Вывод меню при включение
-    map_ = play_but.map()   # номер карты
 
     running = True
 
     while running:
-            screen.fill((0, 0, 0))
-            if castle_health <= 0:
-                running = False
-                finish_screen(screen)
-                break
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:  # выход из игры
-                    terminate()
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # проверка на какую вклетку нажали,
-                    # если строительная то ставиться башня
-                    print(my_board.get_click(event.pos, current_tower[4], current_tower))
-                    type_tower = (type_tower + 1) % len(towers_types)
-                    current_tower = towers_types[type_tower]
-                if event.type == my_event:  # проверка выходит ли враг за дорогу
-                    for enemy in enemies:
-                        cell1 = my_board.get_click((enemy.pos[0] + enemy.rect.width, enemy.pos[1] + enemy.rect.height))
-                        cell2 = my_board.get_click((enemy.pos[0] + enemy.speed, enemy.pos[1] + enemy.speed))
-                        enemy.check(cell1, cell2)
-                if event.type == spawn_enemy:  # создание врага раз в заданое кол-во секунд (сейчас 2.5) секунды
-                    flag = True
-                    while flag:
-                        try:
-                            if sum(n_enemies) == sum(wave_enemies[current_wave]):
-                                print(current_wave)
-                                current_wave += 1
-                                n_enemies = [0 for _ in range(len(enemy_types))]
-                                print(current_wave)
-                                pygame.time.set_timer(spawn_enemy, pause_wave)
-                            if current_wave < len(wave_enemies) and n_enemies[enemy_type % len(enemy_types)] < wave_enemies\
-                                [current_wave][enemy_type % len(enemy_types)]:
-                                pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
-                                Enemy(*enemy_default_settings, *enemy_types[enemy_type % len(enemy_types)])
-                                n_enemies[enemy_type % len(enemy_types)] += 1
-                                enemy_type += 1
-                                flag = False
-                                break
-                        except Exception as error:
-                            print(error)
-                            if not enemies:
-                                current_level += 1
-                                pygame.time.set_timer(spawn_enemy, 0)
-                                if current_level < len(levels_data):
-                                    lvl, waves, wave_enemies = levels_data[current_level]
-                                    db.execute(f"UPDATE statistic SET meaning = {time_level} WHERE Id ="
-                                               f"{current_level + 1} AND meaning > {time_level}")
+        screen.fill((0, 0, 0))
+        if castle_health <= 0:
+            running = False
+            main_menu(screen)
+            break
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:  # выход из игры
+                terminate()
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # проверка на какую вклетку нажали,
+                # если строительная то ставиться башня
+                print(my_board.get_click(event.pos, current_tower[4], current_tower))
+                type_tower = (type_tower + 1) % len(towers_types)
+                current_tower = towers_types[type_tower]
+            if event.type == my_event:  # проверка выходит ли враг за дорогу
+                for enemy in enemies:
+                    cell1 = my_board.get_click((enemy.pos[0] + enemy.rect.width, enemy.pos[1] + enemy.rect.height))
+                    cell2 = my_board.get_click((enemy.pos[0] + enemy.speed, enemy.pos[1] + enemy.speed))
+                    enemy.check(cell1, cell2)
+            if event.type == spawn_enemy:  # создание врага раз в заданое кол-во секунд (сейчас 2.5) секунды
+                flag = True
+                while flag:
+                    try:
+                        if sum(n_enemies) == sum(wave_enemies[current_wave]):
+                            current_wave += 1
+                            n_enemies = [0 for _ in range(len(enemy_types))]
+                            pygame.time.set_timer(spawn_enemy, pause_wave)
                             flag = False
                             break
-                if event.type == time_is_passing:
-                    time_level += 1
-                if event.type in towers_reload.values():  # выстрел башни по окончании перезрядки
-                    find_key(towers_reload, event.type).fire()
-            # отрисовка
-            my_board.render()
-            entities.update()
-            entities.draw(screen)
-            pygame.display.flip()
+                        if current_wave < len(wave_enemies) and n_enemies[enemy_type % len(enemy_types)] < \
+                                wave_enemies[current_wave][enemy_type % len(enemy_types)]:
+                            pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
+                            Enemy(*enemy_default_settings, *enemy_types[enemy_type % len(enemy_types)],
+                                  enemy_paths[current_level])
+                            n_enemies[enemy_type % len(enemy_types)] += 1
+                            flag = False
+                            break
+                        enemy_type += 1
+                    except Exception as error:
+                        print(error)
+                        if not enemies:
+                            current_level += 1
+                            pygame.time.set_timer(spawn_enemy, 0)
+                            if current_level < len(levels_data):
+                                lvl, waves, wave_enemies = levels_data[current_level]
+                                db.execute(f"UPDATE statistic SET meaning = {time_level} WHERE Id ="
+                                           f"{current_level + 1} AND meaning > {time_level}")
+                        flag = False
+                        break
+            if event.type == time_is_passing:
+                time_level += 1
+            if event.type in towers_reload.values():  # выстрел башни по окончании перезрядки
+                find_key(towers_reload, event.type).fire()
+        # отрисовка
+        my_board.render()
+        entities.update()
+        entities.draw(screen)
+        pygame.display.flip()
 
 
 if __name__ == '__main__':
