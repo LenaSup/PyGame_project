@@ -197,7 +197,16 @@ class StartMenu:    # стартовое меню
 
 class Education:    # Окно обучения
     def __init__(self):
-        pass
+        #with open('education.txt', 'rt') as text:
+        #    pages =
+        # print(type(text))
+        # self.text = text.split('\n')
+        #text = open('education.txt').readlines()
+        #print(text)
+        f = pygame.font.Font('7X7PixelizedRegular.ttf', 34)
+        self.text = f.render('1234567890апен', False, (0, 0, 0))
+        text = f.render('1234567890апен', False, (0, 0, 0))
+        self.education = [[self.text, text], 1]
 
     def education_display(self, screen, size):
         done = True
@@ -208,6 +217,8 @@ class Education:    # Окно обучения
         cross_btn = CrossBtn(size, btn)
         while done:
             screen.blit(background, (0, 0))
+            for i in range(len(self.education[0])):
+                screen.blit(self.education[0][i], ((size[0] // 320) * 30, (size[1] // 180) * (30 + 13 * i)))
             btn.draw(screen)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
