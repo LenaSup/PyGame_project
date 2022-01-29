@@ -411,14 +411,14 @@ class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
         self.frames = self.cut_sheet(load_image(image), number_of_frames)
         self.cur_frame = 0
         # -
-        self.pos = x - self.costs_x, y - self.costs_y
+        self.pos = x, y
         self.health = health
         self.damage = damage
         self.speed = speed
         self.image = load_image(image)
         self.price = price
         self.rect = self.image.get_rect()
-        self.rect.x, self.rect.y = x, y
+        self.rect.bottomleft = x, y
         self.path = None
         self.current_step = None
         self.step = None
@@ -824,7 +824,7 @@ def main():
 
     enemy_default_settings = (start_pos[0] * 80 + my_board.top,
                               start_pos[1] * 80 + my_board.cell_size // 4 + my_board.bot)
-    enemy_types = [bat, ghost, mage]
+    enemy_types = [default_enemy, haste_enemy, armored_enemy]
     n_enemies = [0 for _ in range(len(enemy_types))]
     towers_types = [default_tower, mortire, flamethrower]
     type_tower = 0
