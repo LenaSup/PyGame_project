@@ -474,12 +474,6 @@ class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
         self.health = 0
         self.kill()
 
-    # def check(self, cell1, cell2):  # проверка(враг не может выйти за пределы дороги)
-    #     if self.speed > 0 and cell1.name == 'Road_cell':
-    #         self.move()
-    #     if self.speed < 0 and cell2.name == 'Road_cell':
-    #         self.move()
-
     def set_path(self, path):  # задать путь
         self.path = path
         self.current_step = 0
