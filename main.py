@@ -514,7 +514,7 @@ class Board:  # класс поля
         cell_x = (pos[0] - self.top) // self.cell_size
         cell_y = (pos[1] - self.bot) // self.cell_size
         if cell_y < 0 or cell_y >= self.width or cell_x < 0 or cell_x >= self.hieght:
-            return Pass_cell(0, 0, None, 80), (cell_x, cell_y)
+            return Pass_cell(0, 0, 80), (cell_x, cell_y)
         return self.board[cell_x][cell_y], (cell_x, cell_y)
 
     def get_click(self, mouse_pos, tower_price=500, tower_data=None):  # проверка на какую клетку нажали и установка башни
