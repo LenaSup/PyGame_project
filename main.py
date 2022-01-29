@@ -389,25 +389,11 @@ class Building_cell(Cell):  # клетка для стороительства �
 
 
 class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
-    def __init__(self, x, y, health, image, damage=10, price=10, speed=1, path=None):
+    def __init__(self, x, y, health, image, cols, damage=10, price=10, speed=1, path=None):
         super().__init__(enemies)
         self.name = self.__class__.__name__
         # для анимаций
-        number_of_frames = 0
-        self.costs_y = 0
-        self.costs_x = 0    # здвиг спавна в зависимости от текстыры
-        if image == 'slug.png':
-            self.costs_y = (size[0] // 320) * 2
-            self.costs_x = (size[0] // 320) * 4
-            number_of_frames = 9
-        elif image == 'ghost.png':
-            self.costs_y = (size[0] // 320) * 6
-            self.costs_x = (size[0] // 320) * 2
-            number_of_frames = 6
-        elif image == 'magician.png':
-            self.costs_y = (size[0] // 320) * 12
-            self.costs_x = (size[0] // 320) * 8
-            number_of_frames = 13
+        number_of_frames = cols
         self.frames = self.cut_sheet(load_image(image), number_of_frames)
         self.cur_frame = 0
         self.pos = x, y
