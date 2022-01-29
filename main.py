@@ -393,23 +393,41 @@ class Building_cell(Cell):  # клетка для стороительства �
 
 
 class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
-    def __init__(self, x, y, health, image, damage=10, price=10, speed=1, path=None):
+    def __init__(self, x, y, health, images, cols, damage=10, price=10, speed=1, path=None):
         super().__init__(enemies)
         self.name = self.__class__.__name__
+        self.frames = self.cut_sheet(load_image(images), cols)
+        self.cur_frame = 0
+        self.image = pygame.transform.scale(self.frames[self.cur_frame], (40, 40))
         self.pos = x, y
         self.health = health
         self.damage = damage
         self.speed = speed
-        self.image = load_image(image)
         self.price = price
         self.rect = self.image.get_rect()
-        self.rect.x, self.rect.y = self.pos[0], self.pos[1]
+        self.rect.x, self.rect.y = x, y
         self.path = None
         self.current_step = None
         self.step = None
         self.steps = None
         self.is_move = True
         self.set_path(path)
+
+    def cut_sheet(self, sheet, columns):
+        frames = []
+        rows = 1
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+        return frames
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = pygame.transform.scale(self.frames[self.cur_frame], (40, 40))
 
     def load_step(self, index):  # загрузка следующего направления движения из пути
         self.step = self.path[index]
@@ -498,7 +516,6 @@ class Tower(pygame.sprite.Sprite):  # класс башни
         self.reload = reload
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = x - 10, y - 50
-        # self.rect.top, self.rect.bottom = x + cell_size, y + cell_size
         self.radius = radius
         self.focus = None
         self.is_splash = is_splash
@@ -703,8 +720,8 @@ def main_menu(screen):
 def load_menu(my_board, screen, enemy_types, towers_types):
     global current_level, castle_health, gold, enemies, towers, cells, towers_reload, current_wave, \
         enemy_type, levels_data, lvl, waves, wave_enemies, level, start_pos, enemy_default_settings, \
-        n_levels, spawn_enemy, move_enemy, time_is_passing, animated, time_level, n_enemies, type_tower, \
-        current_tower
+        n_levels, spawn_enemy, move_enemy, time_is_passing, animated_towers, time_level, n_enemies, type_tower, \
+        current_tower, animated_enemies
     current_level = main_menu(screen)
     # загрузка карты
     castle_health = 100
@@ -728,11 +745,13 @@ def load_menu(my_board, screen, enemy_types, towers_types):
     spawn_enemy = pygame.USEREVENT + 1
     move_enemy = pygame.USEREVENT + 2
     time_is_passing = pygame.USEREVENT + 3
-    animated = pygame.USEREVENT + 4
-    pygame.time.set_timer(move_enemy, 15)
+    animated_towers = pygame.USEREVENT + 4
+    animated_enemies = pygame.USEREVENT + 5
+    pygame.time.set_timer(move_enemy, 25)
     pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
     pygame.time.set_timer(time_is_passing, 1000)
-    pygame.time.set_timer(animated, 1000)
+    pygame.time.set_timer(animated_towers, 1000)
+    pygame.time.set_timer(animated_enemies, 50)
     time_level = 0
 
     n_enemies = [0 for _ in range(len(enemy_types))]
@@ -783,18 +802,20 @@ def main():
     spawn_enemy = pygame.USEREVENT + 1
     move_enemy = pygame.USEREVENT + 2
     time_is_passing = pygame.USEREVENT + 3
-    animated = pygame.USEREVENT + 4
-    pygame.time.set_timer(move_enemy, 15)
+    animated_towers = pygame.USEREVENT + 4
+    animated_enemies = pygame.USEREVENT + 5
+    pygame.time.set_timer(move_enemy, 20)
     pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
     pygame.time.set_timer(time_is_passing, 1000)
-    pygame.time.set_timer(animated, 1000)
+    pygame.time.set_timer(animated_towers, 1000)
+    pygame.time.set_timer(animated_enemies, 50)
     pause_wave = 10000
     time_level = 0
     global castle_health, enemies, towers, towers_reload, gold, cells
 
     enemy_default_settings = (start_pos[0] * 80 + my_board.top,
                               start_pos[1] * 80 + my_board.cell_size // 4 + my_board.bot)
-    enemy_types = [default_enemy, haste_enemy, armored_enemy]
+    enemy_types = [bat, ghost, mage]
     n_enemies = [0 for _ in range(len(enemy_types))]
     towers_types = [default_tower, mortire, flamethrower]
     type_tower = 0
@@ -852,9 +873,10 @@ def main():
                 time_level += 1
             if event.type in towers_reload.values():  # выстрел башни по окончании перезрядки
                 find_key(towers_reload, event.type).fire()
-            if event.type == animated:
+            if event.type == animated_towers:
                 towers.update()
-                pass
+            if event.type == animated_enemies:
+                enemies.update()
         if castle_health <= 0:
             load_menu(my_board, screen, enemy_types, towers_types)
         # отрисовка
@@ -862,7 +884,6 @@ def main():
         screen.blit(playing_field, (0, 0))      # Игровое поле
         cells.update()
         cells.draw(screen)
-        enemies.update()
         enemies.draw(screen)
         towers.draw(screen)
         pygame.display.flip()
