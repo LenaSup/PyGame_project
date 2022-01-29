@@ -66,7 +66,9 @@ class InfoBut(pygame.sprite.Sprite):    # Кнобка в меню
         self.size = size
 
     def click(self, pos, screen):
-        pass
+        if self.rect.collidepoint(pos):
+            info = Info()
+            info.info_display(screen, self.size)
 
 
 class PlayBut(pygame.sprite.Sprite):
@@ -92,7 +94,6 @@ class PlayBut(pygame.sprite.Sprite):
 
 
 class LearningBut(pygame.sprite.Sprite):    # Кнобка в меню
-
     def __init__(self, group, size, screen):
         super().__init__(group)
         self.image = load_image('learning_button.png')
@@ -107,19 +108,47 @@ class LearningBut(pygame.sprite.Sprite):    # Кнобка в меню
             learning.education_display(screen, self.size)
 
 
-class MenuClouds(pygame.sprite.Sprite):     # Облока в меню (облока в основкой игре меньше
-    def __init__(self, group, size):        # и имеют другой диопозон кординат спавна)
+class MenuClouds(pygame.sprite.Sprite):     # Облока в меню
+    def __init__(self, group, size):
         super().__init__(group)
-        pass
+        self.speed = random.randint(1, 2)
+        self.direction = random.choice([1, -1])
+        self.timer = 0
+        print(self.direction, self.speed)
+        f = 'start_menu_cloud_' + str(random.randint(1, 4)) + '.png'
+        self.image = load_image(f)
+        rect = self.image.get_rect().size
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * random.randint(1, 250),\
+                                        (size[1] // 180) * random.randint(1, 110)
+        self.size = size
 
     def update(self):
-        pass
+        if self.timer == self.speed:
+            self.timer = 0
+            self.rect.left += self.direction
+        else:
+            self.timer += 1
+        if self.rect.left > self.size[0] or self.rect.width + self.rect.left < 0:
+            self.direction = -self.direction
 
 
 class CrossBtn(pygame.sprite.Sprite):
-    def __init__(self, size):
-        super().__init__()
-        pass
+    def __init__(self, size, group):
+        super().__init__(group)
+        self.image = load_image('x.png')
+        rect = self.image.get_rect().size
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * (287 - rect[0]), (size[1] // 180) * 30
+        self.size = size
+
+    def click(self, pos):
+        if self.rect.collidepoint(pos):
+            return False
+        else:
+            return True
 
 
 class ArrowBtnLeft():
@@ -140,11 +169,16 @@ class StartMenu:    # стартовое меню
         self.done = True
 
     def start_menu_display(self, screen, size):
+        clouds = pygame.sprite.Group()
+        menu_clouds = []
+        for i in range(random.randint(2, 3)):
+            menu_clouds.append(MenuClouds(clouds, size))
         fps = 60
         clock = pygame.time.Clock()
         background = pygame.transform.scale(load_image('start_menu_background.png'), size)
         while self.done:
             screen.blit(background, (0, 0))
+            clouds.draw(screen)
             self.start_menu_sprites.draw(screen)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -153,6 +187,7 @@ class StartMenu:    # стартовое меню
                     pos = pygame.mouse.get_pos()
                     for i in self.start_menu_sprites:
                         i.click(pos, screen)
+            clouds.update()
             pygame.display.flip()
             clock.tick(fps)
 
@@ -169,35 +204,68 @@ class Education:    # Окно обучения
         fps = 60
         clock = pygame.time.Clock()
         background = pygame.transform.scale(load_image('empty_field.png'), size)
+        btn = pygame.sprite.Group()
+        cross_btn = CrossBtn(size, btn)
         while done:
             screen.blit(background, (0, 0))
+            btn.draw(screen)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    pos = pygame.mouse.get_pos()
+                    done = cross_btn.click(pos)
             pygame.display.flip()
             clock.tick(fps)
 
 
 class Achievement:    # Меню очевок
     def __init__(self):
-        pass
+        f = pygame.font.Font('7X7PixelizedRegular.ttf', 50)
+        text = ''
 
     def achievement_display(self, screen, size):
         done = True
         fps = 60
         clock = pygame.time.Clock()
         background = pygame.transform.scale(load_image('empty_field.png'), size)
+        btn = pygame.sprite.Group()
+        cross_btn = CrossBtn(size, btn)
         while done:
             screen.blit(background, (0, 0))
+            btn.draw(screen)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    pos = pygame.mouse.get_pos()
+                    done = cross_btn.click(pos)
             pygame.display.flip()
             clock.tick(fps)
 
 
 class Info():
-    pass
+    def __init__(self):
+        pass
+
+    def info_display(self, screen, size):
+        done = True
+        fps = 60
+        clock = pygame.time.Clock()
+        background = pygame.transform.scale(load_image('empty_field.png'), size)
+        btn = pygame.sprite.Group()
+        cross_btn = CrossBtn(size, btn)
+        while done:
+            screen.blit(background, (0, 0))
+            btn.draw(screen)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    pos = pygame.mouse.get_pos()
+                    done = cross_btn.click(pos)
+            pygame.display.flip()
+            clock.tick(fps)
 
 
 class Levels():
@@ -603,7 +671,15 @@ def main():
     my_board = Board(screen, 16, 9)
 
     # часть Лены
+    background = pygame.transform.scale(load_image('sky.png'), size)
     current_level = main_menu(screen)
+    playing_field = pygame.transform.scale(load_image('background_0.png'), size)
+    #
+
+    # часть Лены
+    background = pygame.transform.scale(load_image('sky.png'), size)
+    current_level = main_menu(screen)
+    playing_field = pygame.transform.scale(load_image('background_0.png'), size)
     #
 
     # загрузка карты
@@ -750,6 +826,65 @@ def main():
         # отрисовка
         cells.update()
         cells.draw(screen)
+        entities.update()
+        entities.draw(screen)
+        pygame.display.flip()
+        screen.fill((0, 0, 0))
+        if castle_health <= 0:
+            running = False
+            main_menu(screen)
+            break
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:  # выход из игры
+                terminate()
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # проверка на какую вклетку нажали,
+                # если строительная то ставиться башня
+                print(my_board.get_click(event.pos, current_tower[4], current_tower))
+                type_tower = (type_tower + 1) % len(towers_types)
+                current_tower = towers_types[type_tower]
+            if event.type == my_event:  # проверка выходит ли враг за дорогу
+                for enemy in enemies:
+                    cell1 = my_board.get_click((enemy.pos[0] + enemy.rect.width, enemy.pos[1] + enemy.rect.height))
+                    cell2 = my_board.get_click((enemy.pos[0] + enemy.speed, enemy.pos[1] + enemy.speed))
+                    enemy.check(cell1, cell2)
+            if event.type == spawn_enemy:  # создание врага раз в заданое кол-во секунд (сейчас 2.5) секунды
+                flag = True
+                while flag:
+                    try:
+                        if sum(n_enemies) == sum(wave_enemies[current_wave]):
+                            current_wave += 1
+                            n_enemies = [0 for _ in range(len(enemy_types))]
+                            pygame.time.set_timer(spawn_enemy, pause_wave)
+                            flag = False
+                            break
+                        if current_wave < len(wave_enemies) and n_enemies[enemy_type % len(enemy_types)] < \
+                                wave_enemies[current_wave][enemy_type % len(enemy_types)]:
+                            pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
+                            Enemy(*enemy_default_settings, *enemy_types[enemy_type % len(enemy_types)],
+                                  enemy_paths[current_level])
+                            n_enemies[enemy_type % len(enemy_types)] += 1
+                            flag = False
+                            break
+                        enemy_type += 1
+                    except Exception as error:
+                        print(error)
+                        if not enemies:
+                            current_level += 1
+                            pygame.time.set_timer(spawn_enemy, 0)
+                            if current_level < len(levels_data):
+                                lvl, waves, wave_enemies = levels_data[current_level]
+                                db.execute(f"UPDATE statistic SET meaning = {time_level} WHERE Id ="
+                                           f"{current_level + 1} AND meaning > {time_level}")
+                        flag = False
+                        break
+            if event.type == time_is_passing:
+                time_level += 1
+            if event.type in towers_reload.values():  # выстрел башни по окончании перезрядки
+                find_key(towers_reload, event.type).fire()
+        # отрисовка
+        screen.blit(background, (0, 0))  # Фон с небом
+        screen.blit(playing_field, (0, 0))      # Игровое поле
+        my_board.render()
         entities.update()
         entities.draw(screen)
         pygame.display.flip()
