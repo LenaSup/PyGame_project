@@ -150,16 +150,38 @@ class CrossBtn(pygame.sprite.Sprite):
             return True
 
 
-class ArrowBtnLeft():
-    def __init__(self, size):
-        super().__init__()
-        pass
+class ArrowBtnLeft(pygame.sprite.Sprite):
+    def __init__(self, size, group):
+        super().__init__(group)
+        self.image = load_image('arrow.png')
+        rect = self.image.get_rect().size
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * 34, (size[1] // 180) * 135
+        self.size = size
+
+    def click(self, pos):
+        if self.rect.collidepoint(pos):
+            return True
+        else:
+            return False
 
 
-class ArrowBtnRight():
-    def __init__(self, size):
-        super().__init__()
-        pass
+class ArrowBtnRight(pygame.sprite.Sprite):
+    def __init__(self, size, group):
+        super().__init__(group)
+        self.image = pygame.transform.flip(load_image('arrow.png'), True, False)
+        rect = self.image.get_rect().size
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * 270, (size[1] // 180) * 135
+        self.size = size
+
+    def click(self, pos):
+        if self.rect.collidepoint(pos):
+            return True
+        else:
+            return False
 
 
 class StartMenu:    # стартовое меню
