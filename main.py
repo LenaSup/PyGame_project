@@ -758,6 +758,7 @@ def load_menu(my_board, screen, enemy_types, towers_types):
     type_tower = 0
     current_tower = towers_types[type_tower]
 
+
 # константы используемые объектами или функциями
 db = sqlite3.connect('user_data.sqlite3')
 db.cursor()
