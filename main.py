@@ -255,8 +255,31 @@ class Education:    # Окно обучения
 
 class Achievement:    # Меню очевок
     def __init__(self):
-        f = pygame.font.Font('7X7PixelizedRegular.ttf', 50)
-        text = ''
+        con = sqlite3.connect('user_data.sqlite3')
+        cur = con.cursor()
+        self.f_1 = pygame.font.Font('7X7PixelizedRegular.ttf', 26)
+        self.f_2 = pygame.font.Font('7X7PixelizedRegular.ttf', 22)
+        enemies = list(map(lambda x: x[0],
+                           cur.execute("""SELECT DISTINCT Meaning FROM statistic WHERE Id == 7""").fetchall()))[0]
+        gold = list(map(lambda x: x[0],
+                        cur.execute("""SELECT DISTINCT Meaning FROM statistic WHERE Id == 6""").fetchall()))[0]
+        time1 = list(map(lambda x: x[0],
+                         cur.execute("""SELECT DISTINCT Meaning FROM statistic WHERE Id == 1""").fetchall()))[0]
+        time2 = list(map(lambda x: x[0],
+                         cur.execute("""SELECT DISTINCT Meaning FROM statistic WHERE Id == 2""").fetchall()))[0]
+        time3 = list(map(lambda x: x[0],
+                         cur.execute("""SELECT DISTINCT Meaning FROM statistic WHERE Id == 3""").fetchall()))[0]
+        time4 = list(map(lambda x: x[0],
+                         cur.execute("""SELECT DISTINCT Meaning FROM statistic WHERE Id == 4""").fetchall()))[0]
+        time5 = list(map(lambda x: x[0],
+                         cur.execute("""SELECT DISTINCT Meaning FROM statistic WHERE Id == 5""").fetchall()))[0]
+        data = [enemies, gold, time1, time2, time3, time4, time5]
+        with open('achievement_text.txt', 'rt', encoding='UTF-8') as text:
+            text = text.read().split('\n')
+            for i in range(len(text) // 2):
+                text[i * 2 + 1] = 'Ваш результат: ' + str(data[i])
+        self.text = text
+        con.close()
 
     def achievement_display(self, screen, size):
         done = True
@@ -268,6 +291,12 @@ class Achievement:    # Меню очевок
         while done:
             screen.blit(background, (0, 0))
             btn.draw(screen)
+            for i in range(len(self.text) // 2):
+                screen.blit(self.f_1.render(self.text[i * 2], False, (0, 0, 0)), ((size[0] // 320) * 36,
+                                                                       (size[1] // 180) * (27 + 17 * i)))
+            for i in range(len(self.text) // 2):
+                screen.blit(self.f_2.render(self.text[i * 2 + 1], False, (51, 51, 102)), ((size[0] // 320) * 36,
+                                                                       (size[1] // 180) * (37 + 17 * i)))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
@@ -356,14 +385,29 @@ class Levels():
 
 
 class PauseBut(pygame.sprite.Sprite):
-    def __init__(self, group, size):
+    def __init__(self, group, size, screen):
         super().__init__(group)
+        self.screen = screen
         self.image = load_image('pause_button.png')
         rect = self.image.get_rect().size
         self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
         self.rect = self.image.get_rect()
         self.rect.left, self.rect.top = (size[0] // 320) * 7, (size[1] // 180) * 7
         self.size = size
+
+    def update(self, pos):
+        if self.rect.collidepoint(pos):
+            done = True
+            fps = 60
+            clock = pygame.time.Clock()
+            # background = pygame.transform.scale(load_image('pause_empty_field.png'), self.size)
+            while done:
+                # self.screen.blit(background, (0, 0))
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        sys.exit()
+                #pygame.display.flip()
+                clock.tick(fps)
 
 
 class Cell(pygame.sprite.Sprite):  # общий класс клетки
@@ -733,7 +777,6 @@ def in_game_captions(screen):     # зисло золота и хп замка
     f = pygame.font.Font('7X7PixelizedRegular.ttf', 50)
     gold_text = f.render(f'HP:{castle_health}', False, (51, 51, 102))
     screen.blit(gold_text, (400, 20))
-    pass
 
 
 def load_menu(my_board, screen, enemy_types, towers_types):
@@ -809,7 +852,7 @@ def main():
     playing_field = pygame.transform.scale(load_image('background_0.png'), size)
     #
     clickable_interface_elements = pygame.sprite.Group()
-    pause_but = PauseBut(clickable_interface_elements, size)
+    pause_but = PauseBut(clickable_interface_elements, size, screen)
     # -
     # загрузка карты
     current_wave, enemy_type = 0, 0
@@ -865,6 +908,7 @@ def main():
                 print(my_board.get_click(event.pos, current_tower[4], current_tower))
                 type_tower = (type_tower + 1) % len(towers_types)
                 current_tower = towers_types[type_tower]
+                # pause_but.update(event.pos)
             if event.type == move_enemy:  # проверка выходит ли враг за дорогу
                 for enemy in enemies:
                     enemy.move()
