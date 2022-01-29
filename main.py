@@ -355,6 +355,17 @@ class Levels():
         return self.selected_map
 
 
+class PauseBut(pygame.sprite.Sprite):
+    def __init__(self, group, size):
+        super().__init__(group)
+        self.image = load_image('pause_button.png')
+        rect = self.image.get_rect().size
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * 7, (size[1] // 180) * 7
+        self.size = size
+
+
 class Cell(pygame.sprite.Sprite):  # общий класс клетки
     def __init__(self, x, y, size, image=None):
         self.name = self.__class__.__name__
@@ -712,6 +723,19 @@ def main_menu(screen):
     return play_but.map()   # номер карты
 
 
+def in_game_captions(screen):     # зисло золота и хп замка
+    global gold, castle_health
+    f = pygame.font.Font('7X7PixelizedRegular.ttf', 40)
+    gold_text = f.render(f'{gold}', False, (51, 51, 102))
+    screen.blit(gold_text, (200, 30))
+    background = pygame.transform.scale(load_image('coin.png'), (24, 36))
+    screen.blit(background, (170, 37))
+    f = pygame.font.Font('7X7PixelizedRegular.ttf', 50)
+    gold_text = f.render(f'HP:{castle_health}', False, (51, 51, 102))
+    screen.blit(gold_text, (400, 20))
+    pass
+
+
 def load_menu(my_board, screen, enemy_types, towers_types):
     global current_level, castle_health, gold, enemies, towers, cells, towers_reload, current_wave, \
         enemy_type, levels_data, lvl, waves, wave_enemies, level, start_pos, enemy_default_settings, \
@@ -745,8 +769,8 @@ def load_menu(my_board, screen, enemy_types, towers_types):
     pygame.time.set_timer(move_enemy, 25)
     pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
     pygame.time.set_timer(time_is_passing, 1000)
-    pygame.time.set_timer(animated_towers, 1000)
-    pygame.time.set_timer(animated_enemies, 50)
+    pygame.time.set_timer(animated_towers, 50)
+    pygame.time.set_timer(animated_enemies, 150)
     time_level = 0
 
     n_enemies = [0 for _ in range(len(enemy_types))]
@@ -784,7 +808,9 @@ def main():
     current_level = main_menu(screen)
     playing_field = pygame.transform.scale(load_image('background_0.png'), size)
     #
-
+    clickable_interface_elements = pygame.sprite.Group()
+    pause_but = PauseBut(clickable_interface_elements, size)
+    # -
     # загрузка карты
     current_wave, enemy_type = 0, 0
     levels_data = [load_level(f'data/map_{i + 1}.map', f'data/waves_{i + 1}.txt') for i in range(n_levels)]
@@ -805,7 +831,7 @@ def main():
     pygame.time.set_timer(move_enemy, 20)
     pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
     pygame.time.set_timer(time_is_passing, 1000)
-    pygame.time.set_timer(animated_towers, 1000)
+    pygame.time.set_timer(animated_towers, 150)
     pause_wave = 10000
     time_level = 0
     global castle_health, enemies, towers, towers_reload, gold, cells
@@ -882,6 +908,8 @@ def main():
         # отрисовка
         screen.blit(background, (0, 0))  # Фон с небом
         screen.blit(playing_field, (0, 0))      # Игровое поле
+        clickable_interface_elements.draw(screen)   # элименты игтерфейса игры
+        in_game_captions(screen)    # отрисовка натписей
         cells.update()
         cells.draw(screen)
         enemies.draw(screen)
