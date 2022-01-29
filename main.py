@@ -652,7 +652,7 @@ enemies = pygame.sprite.Group()
 towers = pygame.sprite.Group()
 cells = pygame.sprite.Group()
 towers_reload = {}
-n_levels = 2
+n_levels = 3
 enemy_paths = [load_path(f'data/path_{i + 1}.txt') for i in range(n_levels)]
 size = width, height = 1280, 720
 top, bot = 0, 240
