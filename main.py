@@ -450,15 +450,13 @@ class Tower(pygame.sprite.Sprite):  # класс башни
     def __init__(self, x, y, images, cols, damage=50, radius=200, reload=1000, price=500, is_splash=False, splash_radius=75):
         super().__init__(towers)
         self.name = self.__class__.__name__
-        self.frames = []
-        self.cut_sheet(load_image(images), cols)
+        self.frames = self.cut_sheet(load_image(images), cols)
         self.cur_frame = 0
         self.image = pygame.transform.scale(self.frames[self.cur_frame], (80, 80))
         self.rect = self.rect.move(x, y)
         self.pos = x, y
         self.price = price
         self.damage = damage
-        self.radius = radius
         self.reload = reload
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.pos[0], self.pos[1]
@@ -468,30 +466,37 @@ class Tower(pygame.sprite.Sprite):  # класс башни
         self.splash_radius = splash_radius
 
     def cut_sheet(self, sheet, columns):
+        frames = []
         rows = 1
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
                                 sheet.get_height() // rows)
         for j in range(rows):
             for i in range(columns):
                 frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames.append(sheet.subsurface(pygame.Rect(
+                frames.append(sheet.subsurface(pygame.Rect(
                     frame_location, self.rect.size)))
+        return frames
 
     def update(self):
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = pygame.transform.scale(self.frames[self.cur_frame], (80, 80))
 
     def fire(self):  # выстрел по захваченой цели
-        if self.focus != None and self.focus.health != 0 and pygame.sprite.collide_circle(self.focus, self):
-            if self.is_splash:
-                self.focus.radius = self.splash_radius
-                for enemy in enemies:
-                    if pygame.sprite.collide_circle(enemy, self.focus):
-                        enemy.get_damage(self.damage)
-            else:
-                self.focus.get_damage(self.damage)
+        if self.frames == self.cut_sheet(load_image('tower3_level1.png'), 2):
+            for enemy in enemies:
+                if pygame.sprite.collide_circle(enemy, self):
+                    enemy.get_damage(self.damage)
         else:
-            self.focus_enemy()
+            if self.focus != None and self.focus.health != 0 and pygame.sprite.collide_circle(self.focus, self):
+                if self.is_splash:
+                    self.focus.radius = self.splash_radius
+                    for enemy in enemies:
+                        if pygame.sprite.collide_circle(enemy, self.focus):
+                            enemy.get_damage(self.damage)
+                else:
+                    self.focus.get_damage(self.damage)
+            else:
+                self.focus_enemy()
 
     def focus_enemy(self):  # захват цели (при убийстве прошлой)
         for enemy in enemies:
@@ -519,11 +524,6 @@ class Board:  # класс поля
         for h in range(self.hieght):
             for i in range(self.width):
                 self.board[h][i].set_size(self.cell_size)
-
-    def render(self):  # отрисовка поля, клеток и башен на нём
-        for i in range(self.hieght):
-            for g in range(self.width):
-                self.board[i][g].draw()
 
     def set_cell(self, x, y, cell):  # заменить одну клетку на другую
         self.board[y][x] = cell
@@ -716,7 +716,7 @@ def main():
                               start_pos[1] * 80 + my_board.cell_size // 4 + my_board.bot)
     enemy_types = [default_enemy, haste_enemy, armored_enemy]
     n_enemies = [0 for _ in range(len(enemy_types))]
-    towers_types = [default_tower, sniper_tower, mortire]
+    towers_types = [default_tower, mortire, flamethrower]
     type_tower = 0
     current_tower = towers_types[type_tower]
 
