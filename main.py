@@ -410,15 +410,17 @@ class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
             number_of_frames = 13
         self.frames = self.cut_sheet(load_image(image), number_of_frames)
         self.cur_frame = 0
-        # -
         self.pos = x, y
         self.health = health
         self.damage = damage
         self.speed = speed
-        self.image = load_image(image)
+        self.image = self.frames[self.cur_frame]
         self.price = price
         self.rect = self.image.get_rect()
-        self.rect.bottomleft = x, y
+        self.rect.x, self.rect.y = x, y
+        self.rect.y, self.rect.x = self.rect.y - (self.rect.bottom - self.rect.y - 40), self.rect.x - \
+                                   (self.rect.right - self.rect.x - 60)
+        self.pos = self.rect.x, self.rect.y
         self.path = None
         self.current_step = None
         self.step = None
