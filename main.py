@@ -390,13 +390,32 @@ class Building_cell(Cell):  # клетка для стороительства �
 
 class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
     def __init__(self, x, y, health, image, damage=10, price=10, speed=1, path=None):
-        super().__init__(entities, enemies)
+        super().__init__(enemies)
         self.name = self.__class__.__name__
-        self.pos = x, y
+        # для анимаций
+        number_of_frames = 0
+        self.costs_y = 0
+        self.costs_x = 0    # здвиг спавна в зависимости от текстыры
+        if image == 'slug.png':
+            self.costs_y = (size[0] // 320) * 2
+            self.costs_x = (size[0] // 320) * 4
+            number_of_frames = 9
+        elif image == 'ghost.png':
+            self.costs_y = (size[0] // 320) * 6
+            self.costs_x = (size[0] // 320) * 2
+            number_of_frames = 6
+        elif image == 'magician.png':
+            self.costs_y = (size[0] // 320) * 12
+            self.costs_x = (size[0] // 320) * 8
+            number_of_frames = 13
+        self.frames = self.cut_sheet(load_image(image), number_of_frames)
+        self.cur_frame = 0
+        # -
+        self.pos = x - self.costs_x, y - self.costs_y
         self.health = health
         self.damage = damage
         self.speed = speed
-        self.image = load_image(image)
+        self.image = self.frames[self.cur_frame]
         self.price = price
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.pos[0], self.pos[1]
@@ -455,12 +474,6 @@ class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
         self.health = 0
         self.kill()
 
-    def check(self, cell1, cell2):  # проверка(враг не может выйти за пределы дороги)
-        if self.speed > 0 and cell1.name == 'Road_cell':
-            self.move()
-        if self.speed < 0 and cell2.name == 'Road_cell':
-            self.move()
-
     def set_path(self, path):  # задать путь
         self.path = path
         self.current_step = 0
@@ -480,17 +493,35 @@ class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
         else:
             self.health -= damage
 
+    def cut_sheet(self, sheet, columns, rows=1):    # разрезка кадров
+        frames = []
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns, sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                image = sheet.subsurface(pygame.Rect(frame_location, self.rect.size))
+                rect = image.get_rect().size
+                image = pygame.transform.scale(image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+                frames.append(image)
+        return frames
+
+    def update(self):   # смена кадров
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+
 
 class Tower(pygame.sprite.Sprite):  # класс башни
-    def __init__(self, x, y, image, damage=50, radius=200, reload=1000, price=500, is_splash=False, splash_radius=75):
-        super().__init__(towers, entities)
+    def __init__(self, x, y, images, cols, damage=50, radius=200, reload=1000, price=500, is_splash=False, splash_radius=75):
+        super().__init__(towers)
         self.name = self.__class__.__name__
+        self.frames = self.cut_sheet(load_image(images), cols)
+        self.cur_frame = 0
+        self.image = pygame.transform.scale(self.frames[self.cur_frame], (80, 80))
+        self.rect = self.rect.move(x, y)
         self.pos = x, y
         self.price = price
         self.damage = damage
-        self.radius = radius
         self.reload = reload
-        self.image = load_image(image)
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.pos[0], self.pos[1]
         self.radius = radius
@@ -498,17 +529,38 @@ class Tower(pygame.sprite.Sprite):  # класс башни
         self.is_splash = is_splash
         self.splash_radius = splash_radius
 
+    def cut_sheet(self, sheet, columns):
+        frames = []
+        rows = 1
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+        return frames
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = pygame.transform.scale(self.frames[self.cur_frame], (80, 80))
+
     def fire(self):  # выстрел по захваченой цели
-        if self.focus != None and self.focus.health != 0 and pygame.sprite.collide_circle(self.focus, self):
-            if self.is_splash:
-                self.focus.radius = self.splash_radius
-                for enemy in enemies:
-                    if pygame.sprite.collide_circle(enemy, self.focus):
-                        enemy.get_damage(self.damage)
-            else:
-                self.focus.get_damage(self.damage)
+        if self.frames == self.cut_sheet(load_image('tower3_level1.png'), 2):
+            for enemy in enemies:
+                if pygame.sprite.collide_circle(enemy, self):
+                    enemy.get_damage(self.damage)
         else:
-            self.focus_enemy()
+            if self.focus != None and self.focus.health != 0 and pygame.sprite.collide_circle(self.focus, self):
+                if self.is_splash:
+                    self.focus.radius = self.splash_radius
+                    for enemy in enemies:
+                        if pygame.sprite.collide_circle(enemy, self.focus):
+                            enemy.get_damage(self.damage)
+                else:
+                    self.focus.get_damage(self.damage)
+            else:
+                self.focus_enemy()
 
     def focus_enemy(self):  # захват цели (при убийстве прошлой)
         for enemy in enemies:
@@ -536,11 +588,6 @@ class Board:  # класс поля
         for h in range(self.hieght):
             for i in range(self.width):
                 self.board[h][i].set_size(self.cell_size)
-
-    def render(self):  # отрисовка поля, клеток и башен на нём
-        for i in range(self.hieght):
-            for g in range(self.width):
-                self.board[i][g].draw()
 
     def set_cell(self, x, y, cell):  # заменить одну клетку на другую
         self.board[y][x] = cell
@@ -682,12 +729,11 @@ db = sqlite3.connect('user_data.sqlite3')
 db.cursor()
 castle_health = 100
 gold = 1500
-entities = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
 towers = pygame.sprite.Group()
 cells = pygame.sprite.Group()
 towers_reload = {}
-n_levels = 2
+n_levels = 3
 enemy_paths = [load_path(f'data/path_{i + 1}.txt') for i in range(n_levels)]
 size = width, height = 1280, 720
 top, bot = 0, 240
@@ -718,21 +764,25 @@ def main():
             my_board.set_cell(x, y, level[x][y])
 
     # стандартные таймеры событий
+    enemy_animation = pygame.USEREVENT + 5
+    pygame.time.set_timer(enemy_animation, 50)
     spawn_enemy = pygame.USEREVENT + 1
     my_event = pygame.USEREVENT + 2
     time_is_passing = pygame.USEREVENT + 3
+    animated = pygame.USEREVENT + 4
     pygame.time.set_timer(my_event, 15)
     pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
     pygame.time.set_timer(time_is_passing, 1000)
+    pygame.time.set_timer(animated, 1000)
     pause_wave = 10000
     time_level = 0
-    global castle_health, entities, enemies, towers, towers_reload, gold, cells
+    global castle_health, enemies, towers, towers_reload, gold, cells
 
     enemy_default_settings = (start_pos[0] * 80 + my_board.top,
                               start_pos[1] * 80 + my_board.cell_size // 4 + my_board.bot)
     enemy_types = [default_enemy, haste_enemy, armored_enemy]
     n_enemies = [0 for _ in range(len(enemy_types))]
-    towers_types = [default_tower, sniper_tower, mortire]
+    towers_types = [default_tower, mortire, flamethrower]
     type_tower = 0
     current_tower = towers_types[type_tower]
 
@@ -746,7 +796,6 @@ def main():
                 # загрузка карты
                 castle_health = 100
                 gold = 1500
-                entities = pygame.sprite.Group()
                 enemies = pygame.sprite.Group()
                 towers = pygame.sprite.Group()
                 cells = pygame.sprite.Group()
@@ -763,12 +812,16 @@ def main():
                         my_board.set_cell(x, y, level[x][y])
 
                 # стандартные таймеры событий
+                enemy_animation = pygame.USEREVENT + 5
+                pygame.time.set_timer(enemy_animation, 50)
                 spawn_enemy = pygame.USEREVENT + 1
                 my_event = pygame.USEREVENT + 2
                 time_is_passing = pygame.USEREVENT + 3
+                animated = pygame.USEREVENT + 4
                 pygame.time.set_timer(my_event, 15)
                 pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
                 pygame.time.set_timer(time_is_passing, 1000)
+                pygame.time.set_timer(animated, 1000)
                 pause_wave = 10000
                 time_level = 0
 
@@ -784,9 +837,7 @@ def main():
                 current_tower = towers_types[type_tower]
             if event.type == my_event:  # проверка выходит ли враг за дорогу
                 for enemy in enemies:
-                    cell1 = my_board.get_click((enemy.pos[0] + enemy.rect.width, enemy.pos[1] + enemy.rect.height))
-                    cell2 = my_board.get_click((enemy.pos[0] + enemy.speed, enemy.pos[1] + enemy.speed))
-                    enemy.check(cell1, cell2)
+                    enemy.move()
             if event.type == spawn_enemy:  # создание врага раз в заданое кол-во секунд (сейчас 2.5) секунды
                 flag = True
                 while flag:
@@ -820,12 +871,15 @@ def main():
                 time_level += 1
             if event.type in towers_reload.values():  # выстрел башни по окончании перезрядки
                 find_key(towers_reload, event.type).fire()
+            if event.type == animated:
+                towers.update()
+            if event.type == enemy_animation:
+                enemies.update()
         if castle_health <= 0:
             current_level = main_menu(screen)
             # загрузка карты
             castle_health = 100
             gold = 1500
-            entities = pygame.sprite.Group()
             enemies = pygame.sprite.Group()
             towers = pygame.sprite.Group()
             cells = pygame.sprite.Group()
@@ -842,12 +896,16 @@ def main():
                     my_board.set_cell(x, y, level[x][y])
 
             # стандартные таймеры событий
+            enemy_animation = pygame.USEREVENT + 5
+            pygame.time.set_timer(enemy_animation, 50)
             spawn_enemy = pygame.USEREVENT + 1
             my_event = pygame.USEREVENT + 2
             time_is_passing = pygame.USEREVENT + 3
+            animated = pygame.USEREVENT + 4
             pygame.time.set_timer(my_event, 15)
             pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
             pygame.time.set_timer(time_is_passing, 1000)
+            pygame.time.set_timer(animated, 1000)
             pause_wave = 10000
             time_level = 0
 
@@ -860,8 +918,8 @@ def main():
         screen.blit(playing_field, (0, 0))      # Игровое поле
         cells.update()
         cells.draw(screen)
-        entities.update()
-        entities.draw(screen)
+        enemies.draw(screen)
+        towers.draw(screen)
         pygame.display.flip()
 
 
