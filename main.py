@@ -831,6 +831,7 @@ def main():
     towers_types = [default_tower, mortire, flamethrower]
     type_tower = 0
     current_tower = towers_types[type_tower]
+    print_radius = (0, 0), 0
 
     running = True
 
@@ -841,6 +842,12 @@ def main():
                 load_menu(my_board, screen, enemy_types, towers_types)
             if event.type == pygame.QUIT:  # выход из игры
                 terminate()
+            if event.type == pygame.MOUSEMOTION:
+                cell, pos = my_board.get_cell(event.pos)
+                if cell.name == 'Building_cell' and cell.tower != None:
+                    print_radius = cell.tower.rect.center, cell.tower.radius
+                else:
+                    print_radius = (0, 0), 0
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # проверка на какую вклетку нажали,
                 # если строительная то ставиться башня
                 print(my_board.get_click(event.pos, current_tower[4], current_tower))
@@ -870,10 +877,8 @@ def main():
                     except Exception as error:
                         print(error)
                         if not enemies:
-                            current_level += 1
                             pygame.time.set_timer(spawn_enemy, 0)
                             if current_level < len(levels_data):
-                                lvl, waves, wave_enemies = levels_data[current_level]
                                 db.execute(f"UPDATE statistic SET meaning = {time_level} WHERE Id ="
                                            f"{current_level + 1} AND meaning > {time_level}")
                         flag = False
@@ -895,6 +900,7 @@ def main():
         cells.draw(screen)
         enemies.draw(screen)
         towers.draw(screen)
+        pygame.draw.circle(screen, 'white', *print_radius, 1)
         pygame.display.flip()
 
 
