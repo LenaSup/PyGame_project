@@ -558,7 +558,7 @@ def load_level(file_level, file_waves):  # загрузка уровня и на
     return level_map, waves_data, waves_enemies
 
 
-def generate_level(level_map, cell_size, screen):  # генерация карты
+def generate_level(level_map, cell_size):  # генерация карты
     list_cells = []
     for y in range(len(level_map)):
         lst = []
@@ -652,7 +652,8 @@ enemies = pygame.sprite.Group()
 towers = pygame.sprite.Group()
 cells = pygame.sprite.Group()
 towers_reload = {}
-enemy_paths = [load_path('data/enemy_path.txt')]
+n_levels = 2
+enemy_paths = [load_path(f'data/path_{i + 1}.txt') for i in range(n_levels)]
 size = width, height = 1280, 720
 top, bot = 0, 240
 
@@ -674,9 +675,9 @@ def main():
 
     # загрузка карты
     current_wave, enemy_type = 0, 0
-    levels_data = [load_level('data/map_1.map', 'data/waves_1.txt')]
+    levels_data = [load_level(f'data/map_{i + 1}.map', f'data/waves_{i + 1}.txt') for i in range(n_levels)]
     lvl, waves, wave_enemies = levels_data[current_level]
-    level, start_pos = generate_level(lvl, 80, screen)
+    level, start_pos = generate_level(lvl, 80)
     for x in range(len(level)):
         for y in range(len(level[x])):
             my_board.set_cell(x, y, level[x][y])
@@ -708,9 +709,20 @@ def main():
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 current_level = main_menu(screen)
                 # загрузка карты
+                castle_health = 100
+                gold = 1500
+                entities = pygame.sprite.Group()
+                enemies = pygame.sprite.Group()
+                towers = pygame.sprite.Group()
+                cells = pygame.sprite.Group()
+                towers_reload = {}
+
                 current_wave, enemy_type = 0, 0
+                levels_data = [load_level(f'data/map_{i + 1}.map', f'data/waves_{i + 1}.txt') for i in range(n_levels)]
                 lvl, waves, wave_enemies = levels_data[current_level]
-                level, start_pos = generate_level(lvl, 80, screen)
+                level, start_pos = generate_level(lvl, 80)
+                enemy_default_settings = (start_pos[0] * 80 + my_board.top,
+                                          start_pos[1] * 80 + my_board.cell_size // 4 + my_board.bot)
                 for x in range(len(level)):
                     for y in range(len(level[x])):
                         my_board.set_cell(x, y, level[x][y])
@@ -728,13 +740,6 @@ def main():
                 n_enemies = [0 for _ in range(len(enemy_types))]
                 type_tower = 0
                 current_tower = towers_types[type_tower]
-
-                castle_health = 100
-                gold = 1500
-                entities = pygame.sprite.Group()
-                enemies = pygame.sprite.Group()
-                towers = pygame.sprite.Group()
-                towers_reload = {}
             if event.type == pygame.QUIT:  # выход из игры
                 terminate()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # проверка на какую вклетку нажали,
@@ -783,10 +788,20 @@ def main():
         if castle_health <= 0:
             current_level = main_menu(screen)
             # загрузка карты
+            castle_health = 100
+            gold = 1500
+            entities = pygame.sprite.Group()
+            enemies = pygame.sprite.Group()
+            towers = pygame.sprite.Group()
+            cells = pygame.sprite.Group()
+            towers_reload = {}
+
             current_wave, enemy_type = 0, 0
-            levels_data = [load_level('data/map1.map', 'data/waves_1.txt')]
+            levels_data = [load_level(f'data/map_{i + 1}.map', f'data/waves_{i + 1}.txt') for i in range(n_levels)]
             lvl, waves, wave_enemies = levels_data[current_level]
-            level, start_pos = generate_level(lvl, 80, screen)
+            level, start_pos = generate_level(lvl, 80)
+            enemy_default_settings = (start_pos[0] * 80 + my_board.top,
+                                      start_pos[1] * 80 + my_board.cell_size // 4 + my_board.bot)
             for x in range(len(level)):
                 for y in range(len(level[x])):
                     my_board.set_cell(x, y, level[x][y])
@@ -805,12 +820,6 @@ def main():
             type_tower = 0
             current_tower = towers_types[type_tower]
 
-            castle_health = 100
-            gold = 1500
-            entities = pygame.sprite.Group()
-            enemies = pygame.sprite.Group()
-            towers = pygame.sprite.Group()
-            towers_reload = {}
         # отрисовка
         screen.blit(background, (0, 0))  # Фон с небом
         screen.blit(playing_field, (0, 0))      # Игровое поле
