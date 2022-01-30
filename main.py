@@ -197,6 +197,8 @@ class StartMenu:    # стартовое меню
         fps = 60
         clock = pygame.time.Clock()
         background = pygame.transform.scale(load_image('start_menu_background.png'), size)
+        castle_defense = pygame.transform.scale(load_image('castle_defense.png'), ((size[0] // 320) * 164,
+                                                                                   (size[1] // 180) * 93))
         while self.done:
             screen.blit(background, (0, 0))
             clouds.draw(screen)
@@ -209,6 +211,7 @@ class StartMenu:    # стартовое меню
                     for i in self.start_menu_sprites:
                         i.click(pos, screen)
             clouds.update()
+            screen.blit(castle_defense, ((size[0] // 320) * 76, (size[1] // 180) * 6))
             pygame.display.flip()
             clock.tick(fps)
 
@@ -848,6 +851,7 @@ def main():
 
     # часть Лены
     background = pygame.transform.scale(load_image('sky.png'), size)
+    castle = pygame.transform.scale(load_image('castle.png'), ((size[0] // 320) * 40, (size[1] // 180) * 132))
     current_level = main_menu(screen)
     playing_field = pygame.transform.scale(load_image('background_0.png'), size)
     #
@@ -953,6 +957,7 @@ def main():
         screen.blit(background, (0, 0))  # Фон с небом
         screen.blit(playing_field, (0, 0))      # Игровое поле
         clickable_interface_elements.draw(screen)   # элименты игтерфейса игры
+        screen.blit(castle, ((size[0] // 320) * 280, (size[1] // 180) * 48))     # замок
         in_game_captions(screen)    # отрисовка натписей
         cells.update()
         cells.draw(screen)
