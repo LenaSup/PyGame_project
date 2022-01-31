@@ -387,32 +387,6 @@ class Levels():
         return self.selected_map
 
 
-class PauseBut(pygame.sprite.Sprite):
-    def __init__(self, group, size, screen):
-        super().__init__(group)
-        self.screen = screen
-        self.image = load_image('pause_button.png')
-        rect = self.image.get_rect().size
-        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
-        self.rect = self.image.get_rect()
-        self.rect.left, self.rect.top = (size[0] // 320) * 7, (size[1] // 180) * 7
-        self.size = size
-
-    def update(self, pos):
-        if self.rect.collidepoint(pos):
-            done = True
-            fps = 60
-            clock = pygame.time.Clock()
-            # background = pygame.transform.scale(load_image('pause_empty_field.png'), self.size)
-            while done:
-                # self.screen.blit(background, (0, 0))
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        sys.exit()
-                #pygame.display.flip()
-                clock.tick(fps)
-
-
 class Tower1Btn(pygame.sprite.Sprite):
     def __init__(self, group, size):
         super().__init__(group)
@@ -423,6 +397,11 @@ class Tower1Btn(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.left, self.rect.top = (size[0] // 320) * 242, (size[1] // 180) * 2
         self.size = size
+
+    def update(self, pos):
+        if self.rect.collidepoint(pos):
+            return 1
+        return 0
 
 
 class Tower2Btn(pygame.sprite.Sprite):
@@ -436,6 +415,11 @@ class Tower2Btn(pygame.sprite.Sprite):
         self.rect.left, self.rect.top = (size[0] // 320) * 268, (size[1] // 180) * 2
         self.size = size
 
+    def update(self, pos):
+        if self.rect.collidepoint(pos):
+            return 2
+        return 0
+
 
 class Tower3Btn(pygame.sprite.Sprite):
     def __init__(self, group, size):
@@ -448,6 +432,11 @@ class Tower3Btn(pygame.sprite.Sprite):
         self.rect.left, self.rect.top = (size[0] // 320) * 294, (size[1] // 180) * 2
         self.size = size
 
+    def update(self, pos):
+        if self.rect.collidepoint(pos):
+            return 3
+        return 0
+
 
 class UpgradeBtn(pygame.sprite.Sprite):
     def __init__(self, group, size):
@@ -459,6 +448,11 @@ class UpgradeBtn(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.left, self.rect.top = (size[0] // 320) * 216, (size[1] // 180) * 2
         self.size = size
+
+    def update(self, pos):
+        if self.rect.collidepoint(pos):
+            return -1
+        return 0
 
 
 class Cell(pygame.sprite.Sprite):  # общий класс клетки
@@ -830,6 +824,11 @@ def in_game_captions(screen):     # зисло золота и хп замка
     screen.blit(gold_text, (400, 20))
 
 
+def tower_selection(clickable_interface_elements, pos):     # Выбор башни/улучшение
+    a = list(map(lambda x: x.update(pos), clickable_interface_elements))
+    return sum(a)
+
+
 def load_menu(my_board, screen, enemy_types, towers_types):
     global current_level, castle_health, gold, enemies, towers, cells, towers_reload, current_wave, \
         enemy_type, levels_data, lvl, waves, wave_enemies, level, start_pos, enemy_default_settings, \
@@ -881,7 +880,7 @@ enemies = pygame.sprite.Group()
 towers = pygame.sprite.Group()
 cells = pygame.sprite.Group()
 towers_reload = {}
-n_levels = 3
+n_levels = 5
 enemy_paths = [load_path(f'data/path_{i + 1}.txt') for i in range(n_levels)]
 size = width, height = 1280, 720
 cell_size = 80
@@ -909,7 +908,6 @@ def main():
     tower1_btn = Tower1Btn(clickable_interface_elements, size)
     tower2_btn = Tower2Btn(clickable_interface_elements, size)
     tower3_btn = Tower3Btn(clickable_interface_elements, size)
-    pause_but = PauseBut(clickable_interface_elements, size, screen)
     # -
     # загрузка карты
     current_wave, enemy_type = 0, 0
@@ -961,11 +959,12 @@ def main():
                 else:
                     print_radius = (0, 0), 0
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # проверка на какую вклетку нажали,
+                chosen = tower_selection(clickable_interface_elements, event.pos)   # Номер нажетой кнопки
+                print(chosen)
                 # если строительная то ставиться башня
                 print(my_board.get_click(event.pos, current_tower[4], current_tower))
                 type_tower = (type_tower + 1) % len(towers_types)
                 current_tower = towers_types[type_tower]
-                # pause_but.update(event.pos)
             if event.type == move_enemy:  # проверка выходит ли враг за дорогу
                 for enemy in enemies:
                     enemy.move()
