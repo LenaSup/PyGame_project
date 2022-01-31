@@ -901,7 +901,8 @@ def main():
 
     castle = pygame.transform.scale(load_image('castle.png'), ((size[0] // 320) * 40, (size[1] // 180) * 132))
     current_level = main_menu(screen)
-    playing_field = pygame.transform.scale(load_image('background_0.png'), size)
+    playing_field = pygame.transform.scale(load_image(f'background_{current_level + 1}.png'), size)
+    print(f'background_{current_level}.png')
     #
     clickable_interface_elements = pygame.sprite.Group()
     upgrade_btn = UpgradeBtn(clickable_interface_elements, size)
