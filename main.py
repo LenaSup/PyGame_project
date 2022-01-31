@@ -828,20 +828,23 @@ def main():
                               start_pos[1] * 80 + my_board.cell_size // 4 + my_board.bot)
     enemy_types = [default_enemy, haste_enemy, armored_enemy]
     n_enemies = [0 for _ in range(len(enemy_types))]
-    towers_types = [default_tower, mortire, flamethrower]
+    towers_types = ['Pass', default_towers, mortires, flamethrowers, 'Upgrade']
     type_tower = 0
     current_tower = towers_types[type_tower]
-    print_radius = (0, 0), 0
 
+    print_radius = (0, 0), 0
+    flag = False
     running = True
 
     while running:
         screen.fill((0, 0, 0))
         for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                load_menu(my_board, screen, enemy_types, towers_types)
             if event.type == pygame.QUIT:  # выход из игры
                 terminate()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                load_menu(my_board, screen, enemy_types, towers_types)
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                flag = True
             if event.type == pygame.MOUSEMOTION:
                 cell, pos = my_board.get_cell(event.pos)
                 if cell.name == 'Building_cell' and cell.tower != None:
@@ -850,9 +853,12 @@ def main():
                     print_radius = (0, 0), 0
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # проверка на какую вклетку нажали,
                 # если строительная то ставиться башня
-                print(my_board.get_click(event.pos, current_tower[4], current_tower))
-                type_tower = (type_tower + 1) % len(towers_types)
-                current_tower = towers_types[type_tower]
+                if current_tower not in ('Pass', 'Upgrade'):
+                    print(my_board.get_click(event.pos, current_tower[4], current_tower))
+                    type_tower = (type_tower + 1) % len(towers_types)
+                    current_tower = towers_types[type_tower]
+                elif current_tower == 'Upgrade':
+                    my_board.upgrade(event.pos)
             if event.type == move_enemy:  # проверка выходит ли враг за дорогу
                 for enemy in enemies:
                     enemy.move()
@@ -877,10 +883,11 @@ def main():
                     except Exception as error:
                         print(error)
                         if not enemies:
+                            # при прохождении игры
                             pygame.time.set_timer(spawn_enemy, 0)
-                            if current_level < len(levels_data):
-                                db.execute(f"UPDATE statistic SET meaning = {time_level} WHERE Id ="
-                                           f"{current_level + 1} AND meaning > {time_level}")
+                            db.execute(f"UPDATE statistic SET meaning = {time_level} WHERE Id ="
+                                       f"{current_level + 1} AND meaning > {time_level}")
+                            main_menu(screen)
                         flag = False
                         break
             if event.type == time_is_passing:
@@ -901,6 +908,14 @@ def main():
         enemies.draw(screen)
         towers.draw(screen)
         pygame.draw.circle(screen, 'white', *print_radius, 1)
+        while flag:
+            pygame.draw.rect(screen, 'green', (100, 100, 100, 100), 25)
+            pygame.display.flip()
+            for eve in pygame.event.get():
+                if eve.type == pygame.QUIT:
+                    terminate()
+                if eve.type == pygame.KEYDOWN and eve.key == pygame.K_SPACE:
+                    flag = False
         pygame.display.flip()
 
 
