@@ -203,6 +203,8 @@ class StartMenu:    # стартовое меню
             screen.blit(background, (0, 0))
             clouds.draw(screen)
             self.start_menu_sprites.draw(screen)
+            clouds.update()
+            screen.blit(castle_defense, ((size[0] // 320) * 76, (size[1] // 180) * 6))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()  # Выхлд из игры
@@ -210,8 +212,6 @@ class StartMenu:    # стартовое меню
                     pos = pygame.mouse.get_pos()
                     for i in self.start_menu_sprites:
                         i.click(pos, screen)
-            clouds.update()
-            screen.blit(castle_defense, ((size[0] // 320) * 76, (size[1] // 180) * 6))
             pygame.display.flip()
             clock.tick(fps)
 
@@ -411,6 +411,54 @@ class PauseBut(pygame.sprite.Sprite):
                         sys.exit()
                 #pygame.display.flip()
                 clock.tick(fps)
+
+
+class Tower1Btn(pygame.sprite.Sprite):
+    def __init__(self, group, size):
+        super().__init__(group)
+        self.type = 1
+        self.image = load_image('tower1_button.png')
+        rect = self.image.get_rect().size
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * 242, (size[1] // 180) * 2
+        self.size = size
+
+
+class Tower2Btn(pygame.sprite.Sprite):
+    def __init__(self, group, size):
+        super().__init__(group)
+        self.type = 2
+        self.image = load_image('tower2_button.png')
+        rect = self.image.get_rect().size
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * 268, (size[1] // 180) * 2
+        self.size = size
+
+
+class Tower3Btn(pygame.sprite.Sprite):
+    def __init__(self, group, size):
+        super().__init__(group)
+        self.type = 3
+        self.image = load_image('tower3_button.png')
+        rect = self.image.get_rect().size
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * 294, (size[1] // 180) * 2
+        self.size = size
+
+
+class UpgradeBtn(pygame.sprite.Sprite):
+    def __init__(self, group, size):
+        super().__init__(group)
+        self.type = 3
+        self.image = load_image('upgrade_button.png')
+        rect = self.image.get_rect().size
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * 216, (size[1] // 180) * 2
+        self.size = size
 
 
 class Cell(pygame.sprite.Sprite):  # общий класс клетки
@@ -851,11 +899,16 @@ def main():
 
     # часть Лены
     background = pygame.transform.scale(load_image('sky.png'), size)
+
     castle = pygame.transform.scale(load_image('castle.png'), ((size[0] // 320) * 40, (size[1] // 180) * 132))
     current_level = main_menu(screen)
     playing_field = pygame.transform.scale(load_image('background_0.png'), size)
     #
     clickable_interface_elements = pygame.sprite.Group()
+    upgrade_btn = UpgradeBtn(clickable_interface_elements, size)
+    tower1_btn = Tower1Btn(clickable_interface_elements, size)
+    tower2_btn = Tower2Btn(clickable_interface_elements, size)
+    tower3_btn = Tower3Btn(clickable_interface_elements, size)
     pause_but = PauseBut(clickable_interface_elements, size, screen)
     # -
     # загрузка карты
@@ -956,8 +1009,8 @@ def main():
         # отрисовка
         screen.blit(background, (0, 0))  # Фон с небом
         screen.blit(playing_field, (0, 0))      # Игровое поле
-        clickable_interface_elements.draw(screen)   # элименты игтерфейса игры
         screen.blit(castle, ((size[0] // 320) * 280, (size[1] // 180) * 48))     # замок
+        clickable_interface_elements.draw(screen)  # элименты игтерфейса игры
         in_game_captions(screen)    # отрисовка натписей
         cells.update()
         cells.draw(screen)
