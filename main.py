@@ -219,6 +219,14 @@ class StartMenu:    # стартовое меню
         self.done = False
 
 
+class EndScreen:
+    def __init__(self, win):
+        if win:
+            background = pygame.transform.scale(load_image('win.png'), size)
+        else:
+            background = pygame.transform.scale(load_image('game_over.png'), size)
+
+
 class Education:    # Окно обучения
     def __init__(self):
         with open('education.txt', 'rt', encoding='UTF-8') as text:
