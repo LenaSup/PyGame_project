@@ -387,32 +387,6 @@ class Levels():
         return self.selected_map
 
 
-class Clouds(pygame.sprite.Sprite):     # Облока
-    def __init__(self, group, size):
-        super().__init__(group)
-        self.speed = random.randint(1, 2)
-        self.direction = random.choice([1, -1])
-        self.timer = 0
-        print(self.direction, self.speed)
-        f = 'cloud_' + str(random.randint(1, 3)) + '.png'
-        self.image = load_image(f)
-        rect = self.image.get_rect().size
-        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
-        self.rect = self.image.get_rect()
-        self.rect.left, self.rect.top = (size[0] // 320) * random.randint(1, 300),\
-                                        (size[1] // 180) * random.randint(1, 25)
-        self.size = size
-
-    def update(self):
-        if self.timer == self.speed:
-            self.timer = 0
-            self.rect.left += self.direction
-        else:
-            self.timer += 1
-        if self.rect.left > self.size[0] or self.rect.width + self.rect.left < 0:
-            self.direction = -self.direction
-
-
 class Tower1Btn(pygame.sprite.Sprite):
     def __init__(self, group, size):
         super().__init__(group)
@@ -931,9 +905,6 @@ def main():
     print(f'background_{current_level}.png')
     #
     clickable_interface_elements = pygame.sprite.Group()
-    clouds = pygame.sprite.Group()
-    for i in range(random.randint(1, 3)):
-        Clouds(clouds, size)
     UpgradeBtn(clickable_interface_elements, size)
     Tower1Btn(clickable_interface_elements, size)
     Tower2Btn(clickable_interface_elements, size)
@@ -1037,8 +1008,6 @@ def main():
             load_menu(my_board, screen, enemy_types, towers_types)
         # отрисовка
         screen.blit(background, (0, 0))  # Фон с небом
-        clouds.draw(screen)
-        clouds.update()
         screen.blit(playing_field, (0, 0))      # Игровое поле
         screen.blit(castle, ((size[0] // 320) * 280, (size[1] // 180) * 48))     # замок
         clickable_interface_elements.draw(screen)  # элименты игтерфейса игры
