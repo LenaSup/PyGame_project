@@ -879,7 +879,6 @@ def load_menu(my_board, screen, enemy_types, towers_types):
     towers_reload = {}
 
     current_wave, enemy_type = 0, 0
-    levels_data = [load_level(f'data/map_{i + 1}.map', f'data/waves_{i + 1}.txt') for i in range(n_levels)]
     lvl, waves, wave_enemies = levels_data[current_level]
     level, start_pos = generate_level(lvl, 80)
     enemy_default_settings = (start_pos[0] * 80 + my_board.top,
@@ -893,18 +892,18 @@ def load_menu(my_board, screen, enemy_types, towers_types):
     move_enemy = pygame.USEREVENT + 2
     time_is_passing = pygame.USEREVENT + 3
     animated_towers = pygame.USEREVENT + 4
-    enemy_animation = pygame.USEREVENT + 5
-    pygame.time.set_timer(move_enemy, 20)
+    animated_enemies = pygame.USEREVENT + 5
+    pygame.time.set_timer(move_enemy, 25)
     pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
     pygame.time.set_timer(time_is_passing, 1000)
-    pygame.time.set_timer(animated_towers, 150)
-    pygame.time.set_timer(enemy_animation, 50)
+    pygame.time.set_timer(animated_towers, 1000)
+    pygame.time.set_timer(animated_enemies, 50)
     time_level = 0
 
     n_enemies = [0 for _ in range(len(enemy_types))]
     type_tower = 1
-    lvl, waves, wave_enemies = levels_data[current_level]
     current_tower = towers_types[type_tower]
+    return current_level
 
 
 # константы используемые объектами или функциями
@@ -919,6 +918,7 @@ towers_reload = {}
 n_levels = 5
 current_level = 0
 current_wave, enemy_type = 0, 0
+levels_data = [load_level(f'data/map_{i + 1}.map', f'data/waves_{i + 1}.txt') for i in range(n_levels)]
 enemy_paths = [load_path(f'data/path_{i + 1}.txt') for i in range(n_levels)]
 towers_types = ['Pass', default_towers, mortires, flamethrowers, 'Upgrade']
 size = width, height = 1280, 720
@@ -991,7 +991,12 @@ def main():
             if event.type == pygame.QUIT:  # выход из игры
                 terminate()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                load_menu(my_board, screen, enemy_types, towers_types)
+                current_level = load_menu(my_board, screen, enemy_types, towers_types)
+                current_wave, enemy_type = 0, 0
+                lvl, waves, wave_enemies = levels_data[current_level]
+                level, start_pos = generate_level(lvl, 80)
+                enemy_default_settings = (start_pos[0] * 80 + my_board.top,
+                                          start_pos[1] * 80 + my_board.cell_size // 4 + my_board.bot)
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 flag = True
             if event.type == pygame.MOUSEMOTION:
@@ -1027,7 +1032,6 @@ def main():
                 flag = True
                 while flag:
                     try:
-                        print(current_wave, enemy_type)
                         if sum(n_enemies) == sum(wave_enemies[current_wave]):
                             current_wave += 1
                             n_enemies = [0 for _ in range(len(enemy_types))]
@@ -1065,9 +1069,19 @@ def main():
                 enemies.update()
         if is_load:
             is_load = False
-            load_menu(my_board, screen, enemy_types, towers_types)
+            current_level = load_menu(my_board, screen, enemy_types, towers_types)
+            current_wave, enemy_type = 0, 0
+            lvl, waves, wave_enemies = levels_data[current_level]
+            level, start_pos = generate_level(lvl, 80)
+            enemy_default_settings = (start_pos[0] * 80 + my_board.top,
+                                      start_pos[1] * 80 + my_board.cell_size // 4 + my_board.bot)
         if castle_health <= 0:
-            load_menu(my_board, screen, enemy_types, towers_types)
+            current_level = load_menu(my_board, screen, enemy_types, towers_types)
+            current_wave, enemy_type = 0, 0
+            lvl, waves, wave_enemies = levels_data[current_level]
+            level, start_pos = generate_level(lvl, 80)
+            enemy_default_settings = (start_pos[0] * 80 + my_board.top,
+                                      start_pos[1] * 80 + my_board.cell_size // 4 + my_board.bot)
         # отрисовка
         screen.blit(background, (0, 0))  # Фон с небом
         screen.blit(playing_field, (0, 0))      # Игровое поле
