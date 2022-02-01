@@ -513,14 +513,17 @@ class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
 
 
 class Tower(pygame.sprite.Sprite):  # класс башни
-    def __init__(self, x, y, images, cols, damage=50, radius=200, reload=1000, price=500, is_splash=False, splash_radius=75, flag=False):
+    def __init__(self, x, y, index, images, cols, damage=50, radius=200, reload=1000, price=500, is_splash=False,
+                 splash_radius=75, dont_splash=False, level=1):
         super().__init__(towers)
         self.name = self.__class__.__name__
         self.frames = self.cut_sheet(load_image(images), cols)
         self.cur_frame = 0
         self.image = pygame.transform.scale(self.frames[self.cur_frame], (80, 120))
         self.price = price
-        self.flag = flag
+        self.dont_splash = dont_splash
+        self.level = level
+        self.index = index
         self.damage = damage
         self.reload = reload
         self.rect = self.image.get_rect()
@@ -547,7 +550,7 @@ class Tower(pygame.sprite.Sprite):  # класс башни
         self.image = pygame.transform.scale(self.frames[self.cur_frame], (80, 120))
 
     def fire(self):  # выстрел по захваченой цели либо по области вокруг себя
-        if self.flag:
+        if self.dont_splash:
             for enemy in enemies:
                 if pygame.sprite.collide_circle(enemy, self):
                     enemy.get_damage(self.damage)
@@ -600,14 +603,32 @@ class Board:  # класс поля
             return Pass_cell(0, 0, 80), (cell_x, cell_y)
         return self.board[cell_x][cell_y], (cell_x, cell_y)
 
-    def get_click(self, mouse_pos, tower_price=500, tower_data=None):  # проверка на какую клетку нажали и установка башни
+    def get_click(self, mouse_pos, tower_price=500, tower_data=None, index=1):  # проверка на какую клетку нажали и установка башни
         cell, pos = self.get_cell(mouse_pos)
         if cell and cell.name == 'Building_cell':
             global gold
             if cell.tower == None:
                 if gold >= tower_price and tower_data != None:
                     cell.set_tower(Tower(pos[0] * self.cell_size + 10 + self.top, pos[1] * self.cell_size + 10 + self.bot,
-                                         *tower_data))
+                                         index, *tower_data))
+                    gold -= tower_price
+                    db.execute(f"UPDATE statistic SET meaning ="
+                               f"{db.execute(f'SELECT meaning FROM statistic WHERE Id = 6').fetchone()[0] + tower_price}"
+                               f" WHERE Id = 6")
+                    db.commit()
+                    towers_reload[cell.tower] = pygame.USEREVENT + self.n
+                    pygame.time.set_timer(towers_reload[cell.tower], cell.tower.reload)
+                    self.n += 1
+                else:
+                    print(f'вам не хватает {tower_price - gold} золота')
+            elif cell.tower != None and cell.tower.index != index:
+                if gold + cell.tower.price // 2 >= tower_price and tower_data != None:
+                    del towers_reload[cell.tower]
+                    gold += cell.tower.price // 2
+                    cell.tower.kill()
+                    cell.set_tower(None)
+                    cell.set_tower(Tower(pos[0] * self.cell_size + 10 + self.top, pos[1] * self.cell_size + 10 + self.bot,
+                                         index, *tower_data))
                     gold -= tower_price
                     db.execute(f"UPDATE statistic SET meaning ="
                                f"{db.execute(f'SELECT meaning FROM statistic WHERE Id = 6').fetchone()[0] + tower_price}"
@@ -626,6 +647,29 @@ class Board:  # класс поля
             return cell
         elif cell != None:
             return cell
+
+    def upgrade(self, mouse_pos, upgrade_price):
+        cell, pos = self.get_cell(mouse_pos)
+        level = cell.tower.level
+        if cell.tower != None and level < 3:
+            global gold
+            if gold >= upgrade_price:
+                index = cell.tower.index
+                del towers_reload[cell.tower]
+                cell.tower.kill()
+                cell.set_tower(None)
+                gold -= upgrade_price
+                db.execute(f"UPDATE statistic SET meaning ="
+                           f"{db.execute(f'SELECT meaning FROM statistic WHERE Id = 6').fetchone()[0] + upgrade_price}"
+                           f" WHERE Id = 6")
+                db.commit()
+                global towers_type
+                cell.set_tower(Tower(pos[0] * self.cell_size + 10 + self.top, pos[1] * self.cell_size + 10 + self.bot,
+                                     index, *towers_types[index][level]))
+                towers_reload[cell.tower] = pygame.USEREVENT + self.n
+                pygame.time.set_timer(towers_reload[cell.tower], cell.tower.reload)
+            else:
+                print(f'Вам  не хватает {upgrade_price - gold} золота')
 
 
 def load_level(file_level, file_waves):  # загрузка уровня и настроек игры из файлов
@@ -764,7 +808,7 @@ def load_menu(my_board, screen, enemy_types, towers_types):
     time_level = 0
 
     n_enemies = [0 for _ in range(len(enemy_types))]
-    type_tower = 0
+    type_tower = 1
     current_tower = towers_types[type_tower]
 
 
@@ -779,6 +823,7 @@ cells = pygame.sprite.Group()
 towers_reload = {}
 n_levels = 3
 enemy_paths = [load_path(f'data/path_{i + 1}.txt') for i in range(n_levels)]
+towers_types = ['Pass', default_towers, mortires, flamethrowers, 'Upgrade']
 size = width, height = 1280, 720
 cell_size = 80
 top, bot = 0, 240
@@ -828,8 +873,7 @@ def main():
                               start_pos[1] * 80 + my_board.cell_size // 4 + my_board.bot)
     enemy_types = [default_enemy, haste_enemy, armored_enemy]
     n_enemies = [0 for _ in range(len(enemy_types))]
-    towers_types = ['Pass', default_towers, mortires, flamethrowers, 'Upgrade']
-    type_tower = 0
+    type_tower = 1
     current_tower = towers_types[type_tower]
 
     print_radius = (0, 0), 0
@@ -853,12 +897,22 @@ def main():
                     print_radius = (0, 0), 0
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # проверка на какую вклетку нажали,
                 # если строительная то ставиться башня
+                print(current_tower)
                 if current_tower not in ('Pass', 'Upgrade'):
-                    print(my_board.get_click(event.pos, current_tower[4], current_tower))
-                    type_tower = (type_tower + 1) % len(towers_types)
-                    current_tower = towers_types[type_tower]
+                    current_tower = towers_types[type_tower][0]
+                    print(current_tower)
+                    print(my_board.get_click(event.pos, current_tower[4], current_tower, type_tower))
                 elif current_tower == 'Upgrade':
-                    my_board.upgrade(event.pos)
+                    cell = my_board.get_cell(event.pos)[0]
+                    if cell.name == 'Building_cell' and cell.tower != None and cell.tower.level < 3:
+                        my_board.upgrade(event.pos, towers_types[cell.tower.index][cell.tower.level][4])
+                else:
+                    try:
+                        my_board.get_click(event.pos, 500, None, my_board.get_cell(event.pos)[0].tower.index)
+                    except Exception as error:
+                        print(error)
+                type_tower = (type_tower + 1) % len(towers_types)
+                current_tower = towers_types[type_tower]
             if event.type == move_enemy:  # проверка выходит ли враг за дорогу
                 for enemy in enemies:
                     enemy.move()
