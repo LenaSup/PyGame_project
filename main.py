@@ -220,11 +220,23 @@ class StartMenu:    # стартовое меню
 
 
 class EndScreen:
-    def __init__(self, win):
+    def __init__(self, win, screen):
         if win:
             background = pygame.transform.scale(load_image('win.png'), size)
         else:
             background = pygame.transform.scale(load_image('game_over.png'), size)
+        fps = 60
+        clock = pygame.time.Clock()
+        done = True
+        while done:
+            screen.blit(background, (0, 0))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    done = False
+            pygame.display.flip()
+            clock.tick(fps)
 
 
 class Education:    # Окно обучения
@@ -320,7 +332,12 @@ class Achievement:    # Меню очевок
 
 class Info():
     def __init__(self):
-        pass
+        self.f = pygame.font.Font('7X7PixelizedRegular.ttf', 36)
+        self.text = []
+        self.text.append(self.f.render('Сделана:', False, (0, 0, 0)))
+        self.text.append(self.f.render('Денисовым  Максимом', False, (0, 0, 0)))
+        self.text.append(self.f.render('Старостиной Еленой', False, (0, 0, 0)))
+        self.text.append(self.f.render('Для: Лицей Академии Яндекса', False, (0, 0, 0)))
 
     def info_display(self, screen, size):
         done = True
@@ -331,6 +348,8 @@ class Info():
         cross_btn = CrossBtn(size, btn)
         while done:
             screen.blit(background, (0, 0))
+            for i in range(len(self.text)):
+                screen.blit(self.text[i], ((size[0] // 320) * 36, (size[1] // 180) * (27 + 13 * i)))
             btn.draw(screen)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
