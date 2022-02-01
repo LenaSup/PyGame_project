@@ -869,7 +869,6 @@ def load_menu(my_board, screen, enemy_types, towers_types):
         enemy_type, levels_data, lvl, waves, wave_enemies, level, start_pos, enemy_default_settings, \
         n_levels, spawn_enemy, move_enemy, time_is_passing, animated_towers, time_level, n_enemies, type_tower, \
         current_tower, animated_enemies
-    print(current_wave)
     current_level = main_menu(screen)
     # загрузка карты
     castle_health = 100
@@ -904,6 +903,7 @@ def load_menu(my_board, screen, enemy_types, towers_types):
 
     n_enemies = [0 for _ in range(len(enemy_types))]
     type_tower = 1
+    lvl, waves, wave_enemies = levels_data[current_level]
     current_tower = towers_types[type_tower]
 
 
@@ -917,6 +917,8 @@ towers = pygame.sprite.Group()
 cells = pygame.sprite.Group()
 towers_reload = {}
 n_levels = 5
+current_level = 0
+current_wave, enemy_type = 0, 0
 enemy_paths = [load_path(f'data/path_{i + 1}.txt') for i in range(n_levels)]
 towers_types = ['Pass', default_towers, mortires, flamethrowers, 'Upgrade']
 size = width, height = 1280, 720
@@ -979,6 +981,7 @@ def main():
     current_tower = towers_types[type_tower]
 
     print_radius = (0, 0), 0
+    is_load = False
     flag = False
     running = True
 
@@ -1024,6 +1027,7 @@ def main():
                 flag = True
                 while flag:
                     try:
+                        print(current_wave, enemy_type)
                         if sum(n_enemies) == sum(wave_enemies[current_wave]):
                             current_wave += 1
                             n_enemies = [0 for _ in range(len(enemy_types))]
@@ -1046,7 +1050,8 @@ def main():
                             db.execute(f"UPDATE statistic SET meaning = {time_level} WHERE Id ="
                                        f"{current_level + 1} AND meaning > {time_level}")
                             db.commit()
-                            load_menu(my_board, screen, enemy_types, towers_types)
+                            current_wave, enemy_type = 0, 0
+                            is_load = True
                             print('win')
                         flag = False
                         break
@@ -1058,6 +1063,9 @@ def main():
                 towers.update()
             if event.type == enemy_animation:
                 enemies.update()
+        if is_load:
+            is_load = False
+            load_menu(my_board, screen, enemy_types, towers_types)
         if castle_health <= 0:
             load_menu(my_board, screen, enemy_types, towers_types)
         # отрисовка
