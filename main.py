@@ -6,7 +6,7 @@ import sqlite3
 from entities import *
 
 
-def load_image(neme, color_key=None):   # Вся графика хронится в папке graphics
+def load_image(neme):   # Вся графика хронится в папке graphics
     fullname = os.path.join('graphics', neme)   # Все png с прозрачным фоном, кроме задних планов
     try:
         image = pygame.image.load(fullname)
@@ -197,10 +197,14 @@ class StartMenu:    # стартовое меню
         fps = 60
         clock = pygame.time.Clock()
         background = pygame.transform.scale(load_image('start_menu_background.png'), size)
+        castle_defense = pygame.transform.scale(load_image('castle_defense.png'), ((size[0] // 320) * 164,
+                                                                                   (size[1] // 180) * 93))
         while self.done:
             screen.blit(background, (0, 0))
             clouds.draw(screen)
             self.start_menu_sprites.draw(screen)
+            clouds.update()
+            screen.blit(castle_defense, ((size[0] // 320) * 76, (size[1] // 180) * 6))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()  # Выхлд из игры
@@ -208,7 +212,6 @@ class StartMenu:    # стартовое меню
                     pos = pygame.mouse.get_pos()
                     for i in self.start_menu_sprites:
                         i.click(pos, screen)
-            clouds.update()
             pygame.display.flip()
             clock.tick(fps)
 
@@ -255,8 +258,31 @@ class Education:    # Окно обучения
 
 class Achievement:    # Меню очевок
     def __init__(self):
-        f = pygame.font.Font('7X7PixelizedRegular.ttf', 50)
-        text = ''
+        con = sqlite3.connect('user_data.sqlite3')
+        cur = con.cursor()
+        self.f_1 = pygame.font.Font('7X7PixelizedRegular.ttf', 26)
+        self.f_2 = pygame.font.Font('7X7PixelizedRegular.ttf', 22)
+        enemies = list(map(lambda x: x[0],
+                           cur.execute("""SELECT DISTINCT Meaning FROM statistic WHERE Id == 7""").fetchall()))[0]
+        gold = list(map(lambda x: x[0],
+                        cur.execute("""SELECT DISTINCT Meaning FROM statistic WHERE Id == 6""").fetchall()))[0]
+        time1 = list(map(lambda x: x[0],
+                         cur.execute("""SELECT DISTINCT Meaning FROM statistic WHERE Id == 1""").fetchall()))[0]
+        time2 = list(map(lambda x: x[0],
+                         cur.execute("""SELECT DISTINCT Meaning FROM statistic WHERE Id == 2""").fetchall()))[0]
+        time3 = list(map(lambda x: x[0],
+                         cur.execute("""SELECT DISTINCT Meaning FROM statistic WHERE Id == 3""").fetchall()))[0]
+        time4 = list(map(lambda x: x[0],
+                         cur.execute("""SELECT DISTINCT Meaning FROM statistic WHERE Id == 4""").fetchall()))[0]
+        time5 = list(map(lambda x: x[0],
+                         cur.execute("""SELECT DISTINCT Meaning FROM statistic WHERE Id == 5""").fetchall()))[0]
+        data = [enemies, gold, time1, time2, time3, time4, time5]
+        with open('achievement_text.txt', 'rt', encoding='UTF-8') as text:
+            text = text.read().split('\n')
+            for i in range(len(text) // 2):
+                text[i * 2 + 1] = 'Ваш результат: ' + str(data[i])
+        self.text = text
+        con.close()
 
     def achievement_display(self, screen, size):
         done = True
@@ -268,6 +294,12 @@ class Achievement:    # Меню очевок
         while done:
             screen.blit(background, (0, 0))
             btn.draw(screen)
+            for i in range(len(self.text) // 2):
+                screen.blit(self.f_1.render(self.text[i * 2], False, (0, 0, 0)), ((size[0] // 320) * 36,
+                                                                       (size[1] // 180) * (27 + 17 * i)))
+            for i in range(len(self.text) // 2):
+                screen.blit(self.f_2.render(self.text[i * 2 + 1], False, (51, 51, 102)), ((size[0] // 320) * 36,
+                                                                       (size[1] // 180) * (37 + 17 * i)))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
@@ -355,6 +387,74 @@ class Levels():
         return self.selected_map
 
 
+class Tower1Btn(pygame.sprite.Sprite):
+    def __init__(self, group, size):
+        super().__init__(group)
+        self.type = 1
+        self.image = load_image('tower1_button.png')
+        rect = self.image.get_rect().size
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * 242, (size[1] // 180) * 2
+        self.size = size
+
+    def update(self, pos):
+        if self.rect.collidepoint(pos):
+            return 1
+        return 0
+
+
+class Tower2Btn(pygame.sprite.Sprite):
+    def __init__(self, group, size):
+        super().__init__(group)
+        self.type = 2
+        self.image = load_image('tower2_button.png')
+        rect = self.image.get_rect().size
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * 268, (size[1] // 180) * 2
+        self.size = size
+
+    def update(self, pos):
+        if self.rect.collidepoint(pos):
+            return 2
+        return 0
+
+
+class Tower3Btn(pygame.sprite.Sprite):
+    def __init__(self, group, size):
+        super().__init__(group)
+        self.type = 3
+        self.image = load_image('tower3_button.png')
+        rect = self.image.get_rect().size
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * 294, (size[1] // 180) * 2
+        self.size = size
+
+    def update(self, pos):
+        if self.rect.collidepoint(pos):
+            return 3
+        return 0
+
+
+class UpgradeBtn(pygame.sprite.Sprite):
+    def __init__(self, group, size):
+        super().__init__(group)
+        self.type = 3
+        self.image = load_image('upgrade_button.png')
+        rect = self.image.get_rect().size
+        self.image = pygame.transform.scale(self.image, ((size[0] // 320) * rect[0], (size[1] // 180) * rect[1]))
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = (size[0] // 320) * 216, (size[1] // 180) * 2
+        self.size = size
+
+    def update(self, pos):
+        if self.rect.collidepoint(pos):
+            return -1
+        return 0
+
+
 class Cell(pygame.sprite.Sprite):  # общий класс клетки
     def __init__(self, x, y, size, image=None):
         self.name = self.__class__.__name__
@@ -389,25 +489,11 @@ class Building_cell(Cell):  # клетка для стороительства �
 
 
 class Enemy(pygame.sprite.Sprite):  # класс враждебного моба
-    def __init__(self, x, y, health, image, damage=10, price=10, speed=1, path=None):
+    def __init__(self, x, y, health, image, cols, damage=10, price=10, speed=1, path=None):
         super().__init__(enemies)
         self.name = self.__class__.__name__
         # для анимаций
-        number_of_frames = 0
-        self.costs_y = 0
-        self.costs_x = 0    # здвиг спавна в зависимости от текстыры
-        if image == 'slug.png':
-            self.costs_y = (size[0] // 320) * 2
-            self.costs_x = (size[0] // 320) * 4
-            number_of_frames = 9
-        elif image == 'ghost.png':
-            self.costs_y = (size[0] // 320) * 6
-            self.costs_x = (size[0] // 320) * 2
-            number_of_frames = 6
-        elif image == 'magician.png':
-            self.costs_y = (size[0] // 320) * 12
-            self.costs_x = (size[0] // 320) * 8
-            number_of_frames = 13
+        number_of_frames = cols
         self.frames = self.cut_sheet(load_image(image), number_of_frames)
         self.cur_frame = 0
         self.pos = x, y
@@ -760,14 +846,31 @@ def finish_screen(screen):
 
 def main_menu(screen):
     start_menu_sprites = pygame.sprite.Group()  # Эта група спрайтов отображаемых в стартовом меню
-    achievement_but = AchievementBut(start_menu_sprites, size, screen)
-    learning_but = LearningBut(start_menu_sprites, size, screen)
-    exit_but = ExitBut(start_menu_sprites, size)
-    info_btn = InfoBut(start_menu_sprites, size)
+    AchievementBut(start_menu_sprites, size, screen)
+    LearningBut(start_menu_sprites, size, screen)
+    ExitBut(start_menu_sprites, size)
+    InfoBut(start_menu_sprites, size)
     start_menu = StartMenu(start_menu_sprites)  # Создание обекта стартового миню
     play_but = PlayBut(start_menu_sprites, size, start_menu)
     start_menu.start_menu_display(screen, size)   # Вывод меню при включение
     return play_but.map()   # номер карты
+
+
+def in_game_captions(screen):     # зисло золота и хп замка
+    global gold, castle_health
+    f = pygame.font.Font('7X7PixelizedRegular.ttf', 40)
+    gold_text = f.render(f'{gold}', False, (51, 51, 102))
+    screen.blit(gold_text, (200, 30))
+    background = pygame.transform.scale(load_image('coin.png'), (24, 36))
+    screen.blit(background, (170, 37))
+    f = pygame.font.Font('7X7PixelizedRegular.ttf', 50)
+    gold_text = f.render(f'HP:{castle_health}', False, (51, 51, 102))
+    screen.blit(gold_text, (400, 20))
+
+
+def tower_selection(clickable_interface_elements, pos):     # Выбор башни/улучшение
+    a = list(map(lambda x: x.update(pos), clickable_interface_elements))
+    return sum(a)
 
 
 def load_menu(my_board, screen, enemy_types, towers_types):
@@ -803,8 +906,8 @@ def load_menu(my_board, screen, enemy_types, towers_types):
     pygame.time.set_timer(move_enemy, 25)
     pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
     pygame.time.set_timer(time_is_passing, 1000)
-    pygame.time.set_timer(animated_towers, 1000)
-    pygame.time.set_timer(animated_enemies, 50)
+    pygame.time.set_timer(animated_towers, 50)
+    pygame.time.set_timer(animated_enemies, 150)
     time_level = 0
 
     n_enemies = [0 for _ in range(len(enemy_types))]
@@ -821,7 +924,7 @@ enemies = pygame.sprite.Group()
 towers = pygame.sprite.Group()
 cells = pygame.sprite.Group()
 towers_reload = {}
-n_levels = 3
+n_levels = 5
 enemy_paths = [load_path(f'data/path_{i + 1}.txt') for i in range(n_levels)]
 towers_types = ['Pass', default_towers, mortires, flamethrowers, 'Upgrade']
 size = width, height = 1280, 720
@@ -840,10 +943,18 @@ def main():
 
     # часть Лены
     background = pygame.transform.scale(load_image('sky.png'), size)
-    current_level = main_menu(screen)
-    playing_field = pygame.transform.scale(load_image('background_0.png'), size)
-    #
 
+    castle = pygame.transform.scale(load_image('castle.png'), ((size[0] // 320) * 40, (size[1] // 180) * 132))
+    current_level = main_menu(screen)
+    playing_field = pygame.transform.scale(load_image(f'background_{current_level + 1}.png'), size)
+    print(f'background_{current_level}.png')
+    #
+    clickable_interface_elements = pygame.sprite.Group()
+    UpgradeBtn(clickable_interface_elements, size)
+    Tower1Btn(clickable_interface_elements, size)
+    Tower2Btn(clickable_interface_elements, size)
+    Tower3Btn(clickable_interface_elements, size)
+    # -
     # загрузка карты
     current_wave, enemy_type = 0, 0
     levels_data = [load_level(f'data/map_{i + 1}.map', f'data/waves_{i + 1}.txt') for i in range(n_levels)]
@@ -864,7 +975,7 @@ def main():
     pygame.time.set_timer(move_enemy, 20)
     pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
     pygame.time.set_timer(time_is_passing, 1000)
-    pygame.time.set_timer(animated_towers, 1000)
+    pygame.time.set_timer(animated_towers, 150)
     pause_wave = 10000
     time_level = 0
     global castle_health, enemies, towers, towers_reload, gold, cells
@@ -896,6 +1007,8 @@ def main():
                 else:
                     print_radius = (0, 0), 0
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # проверка на какую вклетку нажали,
+                chosen = tower_selection(clickable_interface_elements, event.pos)   # Номер нажетой кнопки
+                print(chosen)
                 # если строительная то ставиться башня
                 print(current_tower)
                 if current_tower not in ('Pass', 'Upgrade'):
@@ -957,6 +1070,9 @@ def main():
         # отрисовка
         screen.blit(background, (0, 0))  # Фон с небом
         screen.blit(playing_field, (0, 0))      # Игровое поле
+        screen.blit(castle, ((size[0] // 320) * 280, (size[1] // 180) * 48))     # замок
+        clickable_interface_elements.draw(screen)  # элименты игтерфейса игры
+        in_game_captions(screen)    # отрисовка натписей
         cells.update()
         cells.draw(screen)
         enemies.draw(screen)
