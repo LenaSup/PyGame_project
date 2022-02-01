@@ -869,6 +869,7 @@ def load_menu(my_board, screen, enemy_types, towers_types):
         enemy_type, levels_data, lvl, waves, wave_enemies, level, start_pos, enemy_default_settings, \
         n_levels, spawn_enemy, move_enemy, time_is_passing, animated_towers, time_level, n_enemies, type_tower, \
         current_tower, animated_enemies
+    print(current_wave)
     current_level = main_menu(screen)
     # загрузка карты
     castle_health = 100
@@ -893,12 +894,12 @@ def load_menu(my_board, screen, enemy_types, towers_types):
     move_enemy = pygame.USEREVENT + 2
     time_is_passing = pygame.USEREVENT + 3
     animated_towers = pygame.USEREVENT + 4
-    animated_enemies = pygame.USEREVENT + 5
-    pygame.time.set_timer(move_enemy, 25)
+    enemy_animation = pygame.USEREVENT + 5
+    pygame.time.set_timer(move_enemy, 20)
     pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
     pygame.time.set_timer(time_is_passing, 1000)
-    pygame.time.set_timer(animated_towers, 50)
-    pygame.time.set_timer(animated_enemies, 150)
+    pygame.time.set_timer(animated_towers, 150)
+    pygame.time.set_timer(enemy_animation, 50)
     time_level = 0
 
     n_enemies = [0 for _ in range(len(enemy_types))]
@@ -956,17 +957,16 @@ def main():
             my_board.set_cell(x, y, level[x][y])
 
     # стандартные таймеры событий
-    enemy_animation = pygame.USEREVENT + 5
-    pygame.time.set_timer(enemy_animation, 50)
     spawn_enemy = pygame.USEREVENT + 1
     move_enemy = pygame.USEREVENT + 2
     time_is_passing = pygame.USEREVENT + 3
     animated_towers = pygame.USEREVENT + 4
-    animated_enemies = pygame.USEREVENT + 5
+    enemy_animation = pygame.USEREVENT + 5
     pygame.time.set_timer(move_enemy, 20)
     pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
     pygame.time.set_timer(time_is_passing, 1000)
     pygame.time.set_timer(animated_towers, 150)
+    pygame.time.set_timer(enemy_animation, 50)
     pause_wave = 10000
     time_level = 0
     global castle_health, enemies, towers, towers_reload, gold, cells
@@ -1045,7 +1045,9 @@ def main():
                             pygame.time.set_timer(spawn_enemy, 0)
                             db.execute(f"UPDATE statistic SET meaning = {time_level} WHERE Id ="
                                        f"{current_level + 1} AND meaning > {time_level}")
-                            main_menu(screen)
+                            db.commit()
+                            load_menu(my_board, screen, enemy_types, towers_types)
+                            print('win')
                         flag = False
                         break
             if event.type == time_is_passing:
