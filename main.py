@@ -606,6 +606,7 @@ class Tower(pygame.sprite.Sprite):  # класс башни
         self.frames = self.cut_sheet(load_image(images), cols)
         self.cur_frame = 0
         self.image = pygame.transform.scale(self.frames[self.cur_frame], (80, 120))
+        print(price)
         self.price = price
         self.dont_splash = dont_splash
         self.level = level
@@ -691,9 +692,11 @@ class Board:  # класс поля
 
     def get_click(self, mouse_pos, tower_price=500, tower_data=None, index=1):  # проверка на какую клетку нажали и установка башни
         cell, pos = self.get_cell(mouse_pos)
-        if cell and cell.name == 'Building_cell':
+        print(cell.name)
+        if cell.name == 'Building_cell':
             global gold
             if cell.tower == None:
+                print(1)
                 if gold >= tower_price and tower_data != None:
                     cell.set_tower(Tower(pos[0] * self.cell_size + 10 + self.top, pos[1] * self.cell_size + 10 + self.bot,
                                          index, *tower_data))
@@ -708,6 +711,7 @@ class Board:  # класс поля
                 else:
                     print(f'вам не хватает {tower_price - gold} золота')
             elif cell.tower != None and cell.tower.index != index:
+                print(2)
                 if gold + cell.tower.price // 2 >= tower_price and tower_data != None:
                     del towers_reload[cell.tower]
                     gold += cell.tower.price // 2
@@ -726,6 +730,7 @@ class Board:  # класс поля
                 else:
                     print(f'вам не хватает {tower_price - gold} золота')
             else:
+                print(3)
                 del towers_reload[cell.tower]
                 gold += cell.tower.price // 2
                 cell.tower.kill()
@@ -829,20 +834,6 @@ def terminate():  # закрытие программы
     pygame.quit()
     sys.exit()
 
-
-def finish_screen(screen):
-    run = True
-    while run:
-        screen.fill((0, 0, 0))
-        for event in pygame.event.get():
-            if event.type in (pygame.K_ESCAPE, pygame.K_RETURN) or\
-                    (event.type == pygame.MOUSEBUTTONUP and event.button == 1):
-                run = False
-                break
-            elif event.type == pygame.QUIT:
-                run = False
-                break
-        pygame.display.flip()
 
 def main_menu(screen):
     start_menu_sprites = pygame.sprite.Group()  # Эта група спрайтов отображаемых в стартовом меню
@@ -1006,26 +997,26 @@ def main():
                     print_radius = cell.tower.rect.center, cell.tower.radius
                 else:
                     print_radius = (0, 0), 0
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # проверка на какую вклетку нажали,
-                chosen = tower_selection(clickable_interface_elements, event.pos)   # Номер нажетой кнопки
-                print(chosen)
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # проверка на какую клетку нажали,
                 # если строительная то ставиться башня
-                print(current_tower)
                 if current_tower not in ('Pass', 'Upgrade'):
                     current_tower = towers_types[type_tower][0]
-                    print(current_tower)
-                    print(my_board.get_click(event.pos, current_tower[4], current_tower, type_tower))
+                    print(my_board.get_click(event.pos, current_tower[5], current_tower, type_tower))
                 elif current_tower == 'Upgrade':
                     cell = my_board.get_cell(event.pos)[0]
                     if cell.name == 'Building_cell' and cell.tower != None and cell.tower.level < 3:
                         my_board.upgrade(event.pos, towers_types[cell.tower.index][cell.tower.level][4])
                 else:
                     try:
-                        my_board.get_click(event.pos, 500, None, my_board.get_cell(event.pos)[0].tower.index)
+                        my_board.get_click(event.pos, cell.tower.price, None, my_board.get_cell(event.pos)[0].tower.index)
                     except Exception as error:
                         print(error)
-                type_tower = (type_tower + 1) % len(towers_types)
+                type_tower = tower_selection(clickable_interface_elements, event.pos)   # Номер нажатой кнопки
+                print(type_tower)
                 current_tower = towers_types[type_tower]
+                print(current_tower)
+                #type_tower = (type_tower + 1) % len(towers_types)
+                #current_tower = towers_types[type_tower]
             if event.type == move_enemy:  # проверка выходит ли враг за дорогу
                 for enemy in enemies:
                     enemy.move()
