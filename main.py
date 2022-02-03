@@ -219,6 +219,26 @@ class StartMenu:    # стартовое меню
         self.done = False
 
 
+class EndScreen:
+    def __init__(self, win, screen):
+        if win:
+            background = pygame.transform.scale(load_image('win.png'), size)
+        else:
+            background = pygame.transform.scale(load_image('game_over.png'), size)
+        fps = 60
+        clock = pygame.time.Clock()
+        done = True
+        while done:
+            screen.blit(background, (0, 0))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    done = False
+            pygame.display.flip()
+            clock.tick(fps)
+
+
 class Education:    # Окно обучения
     def __init__(self):
         with open('education.txt', 'rt', encoding='UTF-8') as text:
@@ -312,7 +332,12 @@ class Achievement:    # Меню очевок
 
 class Info():
     def __init__(self):
-        pass
+        self.f = pygame.font.Font('7X7PixelizedRegular.ttf', 36)
+        self.text = []
+        self.text.append(self.f.render('Сделана:', False, (0, 0, 0)))
+        self.text.append(self.f.render('Денисовым  Максимом', False, (0, 0, 0)))
+        self.text.append(self.f.render('Старостиной Еленой', False, (0, 0, 0)))
+        self.text.append(self.f.render('Для: Лицей Академии Яндекса', False, (0, 0, 0)))
 
     def info_display(self, screen, size):
         done = True
@@ -323,6 +348,8 @@ class Info():
         cross_btn = CrossBtn(size, btn)
         while done:
             screen.blit(background, (0, 0))
+            for i in range(len(self.text)):
+                screen.blit(self.text[i], ((size[0] // 320) * 36, (size[1] // 180) * (27 + 13 * i)))
             btn.draw(screen)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -929,7 +956,7 @@ def load_menu(my_board, screen, enemy_types, towers_types):
     animated_towers = pygame.USEREVENT + 4
     enemy_animation = pygame.USEREVENT + 5
     move_bullets = pygame.USEREVENT + 6
-    pygame.time.set_timer(move_enemy, 20)
+    pygame.time.set_timer(move_enemy, 30)
     pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
     pygame.time.set_timer(time_is_passing, 1000)
     pygame.time.set_timer(animated_towers, 150)
@@ -1004,7 +1031,7 @@ def main():
     animated_towers = pygame.USEREVENT + 4
     enemy_animation = pygame.USEREVENT + 5
     move_bullets = pygame.USEREVENT + 6
-    pygame.time.set_timer(move_enemy, 20)
+    pygame.time.set_timer(move_enemy, 30)
     pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
     pygame.time.set_timer(time_is_passing, 1000)
     pygame.time.set_timer(animated_towers, 150)
@@ -1110,6 +1137,7 @@ def main():
                 enemies.update()
         if is_load:
             is_load = False
+            EndScreen(True, screen)
             current_level = load_menu(my_board, screen, enemy_types, towers_types)
             current_wave, enemy_type = 0, 0
             lvl, waves, wave_enemies = levels_data[current_level]
@@ -1117,6 +1145,7 @@ def main():
             enemy_default_settings = (start_pos[0] * 80 + my_board.top,
                                       start_pos[1] * 80 + my_board.cell_size // 4 + my_board.bot)
         if castle_health <= 0:
+            EndScreen(False, screen)
             current_level = load_menu(my_board, screen, enemy_types, towers_types)
             current_wave, enemy_type = 0, 0
             lvl, waves, wave_enemies = levels_data[current_level]
