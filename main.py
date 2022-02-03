@@ -933,7 +933,7 @@ def load_menu(my_board, screen, enemy_types, towers_types):
     current_level = main_menu(screen)
     # загрузка карты
     castle_health = 100
-    gold = 1500
+    gold = 1000
     enemies = pygame.sprite.Group()
     towers = pygame.sprite.Group()
     cells = pygame.sprite.Group()
@@ -961,7 +961,7 @@ def load_menu(my_board, screen, enemy_types, towers_types):
     pygame.time.set_timer(time_is_passing, 1000)
     pygame.time.set_timer(animated_towers, 150)
     pygame.time.set_timer(enemy_animation, 50)
-    pygame.time.set_timer(move_bullets, 2)
+    pygame.time.set_timer(move_bullets, 1)
     time_level = 0
 
     n_enemies = [0 for _ in range(len(enemy_types))]
@@ -974,7 +974,7 @@ def load_menu(my_board, screen, enemy_types, towers_types):
 db = sqlite3.connect('user_data.sqlite3')
 db.cursor()
 castle_health = 100
-gold = 1500
+gold = 1000
 enemies = pygame.sprite.Group()
 towers = pygame.sprite.Group()
 cells = pygame.sprite.Group()
@@ -1036,7 +1036,7 @@ def main():
     pygame.time.set_timer(time_is_passing, 1000)
     pygame.time.set_timer(animated_towers, 150)
     pygame.time.set_timer(enemy_animation, 50)
-    pygame.time.set_timer(move_bullets, 2)
+    pygame.time.set_timer(move_bullets, 1)
     pause_wave = 10000
     time_level = 0
     global castle_health, enemies, towers, towers_reload, gold, cells
@@ -1081,7 +1081,7 @@ def main():
                 elif current_tower == 'Upgrade':
                     cell = my_board.get_cell(event.pos)[0]
                     if cell.name == 'Building_cell' and cell.tower != None and cell.tower.level < 3:
-                        my_board.upgrade(event.pos, towers_types[cell.tower.index][cell.tower.level][4])
+                        my_board.upgrade(event.pos, towers_types[cell.tower.index][cell.tower.level][5])
                 type_tower = tower_selection(clickable_interface_elements, event.pos)   # Номер нажатой кнопки
                 current_tower = towers_types[type_tower]
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
