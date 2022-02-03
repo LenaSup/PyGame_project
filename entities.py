@@ -1,7 +1,7 @@
 slug = (100, 'slug.png', 9, 10, 10, 2)
 ghost = (50, 'ghost.png', 6, 5, 25, 4)
 mag = (250, 'magician.png', 13, 15, 50, 1)
-bat = (75, 'bat.png', 8, 10, 25, 3)
+bat = (75, 'bat.png', 8, 10, 25, 4)
 spider = (250, 'spider.png', 4, 15, 75, 2)
 # images, cols, damage=50, radius=200, reload=1000, price=500, is_splash=False, splash_radius=75, is_around=False,
 # level=1
