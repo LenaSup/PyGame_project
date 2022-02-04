@@ -974,18 +974,6 @@ def load_menu(my_board, screen, enemy_types, towers_types):
     animated_towers = pygame.USEREVENT + 4
     enemy_animation = pygame.USEREVENT + 5
     move_bullets = pygame.USEREVENT + 6
-    pygame.time.set_timer(move_enemy, 0)
-    pygame.time.set_timer(spawn_enemy, 0)
-    pygame.time.set_timer(time_is_passing, 0)
-    pygame.time.set_timer(animated_towers, 0)
-    pygame.time.set_timer(enemy_animation, 0)
-    pygame.time.set_timer(move_bullets, 0)
-    pygame.time.set_timer(move_enemy, 30)
-    pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
-    pygame.time.set_timer(time_is_passing, 1000)
-    pygame.time.set_timer(animated_towers, 150)
-    pygame.time.set_timer(enemy_animation, 50)
-    pygame.time.set_timer(move_bullets, 1)
     time_level = 0
 
     n_enemies = [0 for _ in range(len(enemy_types))]
@@ -1090,6 +1078,18 @@ def main():
                 level, start_pos = generate_level(lvl, 80)
                 enemy_default_settings = (start_pos[0] * 80 + my_board.top,
                                           start_pos[1] * 80 + my_board.cell_size // 4 + my_board.bot)
+                pygame.time.set_timer(move_enemy, 0)
+                pygame.time.set_timer(spawn_enemy, 0)
+                pygame.time.set_timer(time_is_passing, 0)
+                pygame.time.set_timer(animated_towers, 0)
+                pygame.time.set_timer(enemy_animation, 0)
+                pygame.time.set_timer(move_bullets, 0)
+                pygame.time.set_timer(move_enemy, 30)
+                pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
+                pygame.time.set_timer(time_is_passing, 1000)
+                pygame.time.set_timer(animated_towers, 150)
+                pygame.time.set_timer(enemy_animation, 50)
+                pygame.time.set_timer(move_bullets, 1)
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 pause = True
             if event.type == pygame.MOUSEMOTION:
@@ -1169,6 +1169,18 @@ def main():
             level, start_pos = generate_level(lvl, 80)
             enemy_default_settings = (start_pos[0] * 80 + my_board.top,
                                       start_pos[1] * 80 + my_board.cell_size // 4 + my_board.bot)
+            pygame.time.set_timer(move_enemy, 0)
+            pygame.time.set_timer(spawn_enemy, 0)
+            pygame.time.set_timer(time_is_passing, 0)
+            pygame.time.set_timer(animated_towers, 0)
+            pygame.time.set_timer(enemy_animation, 0)
+            pygame.time.set_timer(move_bullets, 0)
+            pygame.time.set_timer(move_enemy, 30)
+            pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
+            pygame.time.set_timer(time_is_passing, 1000)
+            pygame.time.set_timer(animated_towers, 150)
+            pygame.time.set_timer(enemy_animation, 50)
+            pygame.time.set_timer(move_bullets, 1)
         if castle_health <= 0:
             EndScreen(False, screen, time_level)
             current_level = load_menu(my_board, screen, enemy_types, towers_types)
@@ -1177,6 +1189,18 @@ def main():
             level, start_pos = generate_level(lvl, 80)
             enemy_default_settings = (start_pos[0] * 80 + my_board.top,
                                       start_pos[1] * 80 + my_board.cell_size // 4 + my_board.bot)
+            pygame.time.set_timer(move_enemy, 0)
+            pygame.time.set_timer(spawn_enemy, 0)
+            pygame.time.set_timer(time_is_passing, 0)
+            pygame.time.set_timer(animated_towers, 0)
+            pygame.time.set_timer(enemy_animation, 0)
+            pygame.time.set_timer(move_bullets, 0)
+            pygame.time.set_timer(move_enemy, 30)
+            pygame.time.set_timer(spawn_enemy, waves[current_wave][1])
+            pygame.time.set_timer(time_is_passing, 1000)
+            pygame.time.set_timer(animated_towers, 150)
+            pygame.time.set_timer(enemy_animation, 50)
+            pygame.time.set_timer(move_bullets, 1)
         # отрисовка
         screen.blit(background, (0, 0))  # Фон с небом
         screen.blit(playing_field, (0, 0))      # Игровое поле
