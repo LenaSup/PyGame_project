@@ -220,7 +220,10 @@ class StartMenu:    # стартовое меню
 
 
 class EndScreen:
-    def __init__(self, win, screen):
+    def __init__(self, win, screen, time):
+        f = pygame.font.Font('7X7PixelizedRegular.ttf', 60)
+        text = f.render(f'Ваше время: {time}', False, (0, 0, 0))
+        btn = pygame.transform.scale(load_image('menu_button.png'), ((size[0] // 320) * 68, (size[1] // 180) * 25))
         if win:
             background = pygame.transform.scale(load_image('win.png'), size)
         else:
@@ -230,6 +233,9 @@ class EndScreen:
         done = True
         while done:
             screen.blit(background, (0, 0))
+            screen.blit(btn, (475, 550))
+            if win:
+                screen.blit(text, (300, 370))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
@@ -296,7 +302,7 @@ class Achievement:    # Меню очевок
                          cur.execute("""SELECT DISTINCT Meaning FROM statistic WHERE Id == 4""").fetchall()))[0]
         time5 = list(map(lambda x: x[0],
                          cur.execute("""SELECT DISTINCT Meaning FROM statistic WHERE Id == 5""").fetchall()))[0]
-        data = [enemies, gold, time1, time2, time3, time4, time5]
+        data = [enemies, gold, self.time(time1), self.time(time2),self.time(time3), self.time(time4), self.time(time5)]
         with open('achievement_text.txt', 'rt', encoding='UTF-8') as text:
             text = text.read().split('\n')
             for i in range(len(text) // 2):
@@ -329,15 +335,21 @@ class Achievement:    # Меню очевок
             pygame.display.flip()
             clock.tick(fps)
 
+    def time(self, time):
+        if time == 9999:
+            return 0
+        return time
+
 
 class Info():
     def __init__(self):
         self.f = pygame.font.Font('7X7PixelizedRegular.ttf', 36)
         self.text = []
-        self.text.append(self.f.render('Сделана:', False, (0, 0, 0)))
-        self.text.append(self.f.render('Денисовым  Максимом', False, (0, 0, 0)))
-        self.text.append(self.f.render('Старостиной Еленой', False, (0, 0, 0)))
-        self.text.append(self.f.render('Для: Лицей Академии Яндекса', False, (0, 0, 0)))
+        self.text.append(self.f.render('Авторы:', False, (0, 0, 0)))
+        self.text.append(self.f.render('Денисов Максим', False, (0, 0, 0)))
+        self.text.append(self.f.render('Старостина Елена', False, (0, 0, 0)))
+        self.text.append(self.f.render('Сделано для: Лицей Академии Яндекса', False, (0, 0, 0)))
+        self.text.append(self.f.render('Начало разработки: 17.12.21', False, (0, 0, 0)))
 
     def info_display(self, screen, size):
         done = True
@@ -908,7 +920,7 @@ def main_menu(screen):
     return play_but.map()   # номер карты
 
 
-def in_game_captions(screen):     # зисло золота и хп замка
+def in_game_captions(screen):     # зисло золота и хп замка цены
     global gold, castle_health
     f = pygame.font.Font('7X7PixelizedRegular.ttf', 40)
     gold_text = f.render(f'{gold}', False, (51, 51, 102))
@@ -918,6 +930,12 @@ def in_game_captions(screen):     # зисло золота и хп замка
     f = pygame.font.Font('7X7PixelizedRegular.ttf', 50)
     gold_text = f.render(f'HP:{castle_health}', False, (51, 51, 102))
     screen.blit(gold_text, (400, 20))
+    f = pygame.font.Font('7X7PixelizedRegular.ttf', 22)
+    prices = [750, 500, 750, 1500]
+    coord = [(886, 20), (992, 20), (1096, 20), (1190, 20)]
+    for i in range(len(prices)):
+        gold_text = f.render(f'{prices[i]}', False, (251, 237, 229))
+        screen.blit(gold_text, coord[i])
 
 
 def tower_selection(clickable_interface_elements, pos):     # Выбор башни/улучшение
@@ -1002,7 +1020,7 @@ def main():
     pygame.init()
     screen = pygame.display.set_mode(size)
     pygame.display.set_caption('First board')
-    pygame.display.set_icon(load_image('.car.jpg'))
+    pygame.display.set_icon(load_image('icon.png'))
 
     # создания поля
     my_board = Board(screen, 14, 6)
@@ -1144,7 +1162,7 @@ def main():
                 enemies.update()
         if is_load:
             is_load = False
-            EndScreen(True, screen)
+            EndScreen(True, screen, time_level)
             current_level = load_menu(my_board, screen, enemy_types, towers_types)
             current_wave, enemy_type = 0, 0
             lvl, waves, wave_enemies = levels_data[current_level]
@@ -1152,7 +1170,7 @@ def main():
             enemy_default_settings = (start_pos[0] * 80 + my_board.top,
                                       start_pos[1] * 80 + my_board.cell_size // 4 + my_board.bot)
         if castle_health <= 0:
-            EndScreen(False, screen)
+            EndScreen(False, screen, time_level)
             current_level = load_menu(my_board, screen, enemy_types, towers_types)
             current_wave, enemy_type = 0, 0
             lvl, waves, wave_enemies = levels_data[current_level]
@@ -1173,13 +1191,28 @@ def main():
         enemies.draw(screen)
         pygame.draw.circle(screen, 'white', *print_radius, 1)
         while pause:
-            pygame.draw.rect(screen, 'green', (100, 100, 100, 100), 25)
+            f = pygame.font.Font('7X7PixelizedRegular.ttf', 60)
+            pause = pygame.transform.scale(load_image('pause_empty_field.png'), size)
+            screen.blit(pause, (0, 0))
+            text_1 = [f.render('продолжить', False, (51, 51, 102)), (400, 230)]
+            screen.blit(text_1[0], text_1[1])
+            text_2 = [f.render('главное меню', False, (51, 51, 102)), (358, 340)]
+            screen.blit(text_2[0], text_2[1])
             pygame.display.flip()
             for eve in pygame.event.get():
                 if eve.type == pygame.QUIT:
                     terminate()
                 if eve.type == pygame.KEYDOWN and eve.key == pygame.K_SPACE:
                     pause = False
+                if eve.type == pygame.MOUSEBUTTONDOWN:
+                    pos = pygame.mouse.get_pos()
+                    if pos[0] in range(text_1[1][0], text_1[1][0] + text_1[0].get_width()) \
+                            and pos[1] in range(text_1[1][1], text_1[1][1] + text_1[0].get_height()):
+                        flag = False
+                    if pos[0] in range(text_2[1][0], text_2[1][0] + text_2[0].get_width()) \
+                            and pos[1] in range(text_2[1][1], text_2[1][1] + text_2[0].get_height()):
+                        castle_health = 0
+                        flag = False
         pygame.display.flip()
 
 
