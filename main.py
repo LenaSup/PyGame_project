@@ -349,7 +349,7 @@ class Info():
         self.text.append(self.f.render('Денисов Максим', False, (0, 0, 0)))
         self.text.append(self.f.render('Старостина Елена', False, (0, 0, 0)))
         self.text.append(self.f.render('Сделано для: Лицей Академии Яндекса', False, (0, 0, 0)))
-        self.text.append(self.f.render('Начало разработки:17.12.21', False, (0, 0, 0)))
+        self.text.append(self.f.render('Начало разработки: 17.12.21', False, (0, 0, 0)))
 
     def info_display(self, screen, size):
         done = True
